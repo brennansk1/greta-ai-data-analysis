@@ -1,0 +1,19 @@
+data:
+  source: WA_Fn-UseC_-Telco-Customer-Churn.csv
+  type: csv
+  target_column: Churn
+  sheet_name: null
+preprocessing:
+  missing_strategy: mean
+  outlier_method: iqr
+  outlier_threshold: 1.5
+  normalize_types: true
+  feature_engineering: true
+hypothesis_search:
+  pop_size: 5
+  num_generations: 3
+  cx_prob: 0.7
+  mut_prob: 0.2
+output:
+  format: json
+  file: results.json
