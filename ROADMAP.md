@@ -67,6 +67,17 @@ This document outlines the complete phased development roadmap for Project Greta
 - [x] Enhance visualizations for complex analyses. - Completed: Advanced Plotly visualizations integrated.
 - [x] Increase transparency with detailed statistical metrics display. - Completed: Detailed metrics shown in analysis and results pages.
 
+**Enhanced Feature Selection Pipeline (Completed 2025-09-27):**
+- [x] Implement parallel execution for genetic algorithm optimization.
+- [x] Add dynamic feature engineering (polynomial and interaction terms).
+- [x] Integrate importance explainability with SHAP-based rankings.
+- [x] Implement stability selection with bootstrap validation.
+- [x] Add causal prioritization for feature weighting.
+- [x] Enable adaptive parameters for dynamic GA tuning.
+- [x] Support multi-modal handling for mixed data types.
+- [x] Validate pipeline on real-world churn dataset (Telco Customer Churn).
+- [x] Generate comprehensive PDF reports with business insights.
+
 ## Phase 4: Enterprise Readiness & Scalability
 **Goal:** Shift focus to performance and collaboration by re-architecting for big data and adding team management features.
 
