@@ -18,7 +18,7 @@ class TestCreateToolbox:
     def test_create_toolbox_basic(self):
         """Test basic toolbox creation."""
         num_features = 5
-        toolbox = create_toolbox(num_features)
+        toolbox, chromosome_info = create_toolbox(num_features)
 
         assert isinstance(toolbox, base.Toolbox)
         assert hasattr(toolbox, 'individual')
@@ -27,24 +27,26 @@ class TestCreateToolbox:
         assert hasattr(toolbox, 'mate')
         assert hasattr(toolbox, 'mutate')
         assert hasattr(toolbox, 'select')
+        assert isinstance(chromosome_info, dict)
+        assert 'total_length' in chromosome_info
 
     def test_create_toolbox_individual_length(self):
         """Test that individuals have correct length."""
         num_features = 3
-        toolbox = create_toolbox(num_features)
+        toolbox, chromosome_info = create_toolbox(num_features)
 
         individual = toolbox.individual()
-        assert len(individual) == num_features
+        assert len(individual) == chromosome_info['total_length']
         assert all(bit in [0, 1] for bit in individual)
 
     def test_create_toolbox_population_creation(self):
         """Test population creation."""
         num_features = 4
-        toolbox = create_toolbox(num_features)
+        toolbox, chromosome_info = create_toolbox(num_features)
 
         pop = toolbox.population(n=10)
         assert len(pop) == 10
-        assert all(len(ind) == num_features for ind in pop)
+        assert all(len(ind) == chromosome_info['total_length'] for ind in pop)
 
 
 class TestEvaluateHypothesis:
@@ -127,16 +129,18 @@ class TestRunGeneticAlgorithm:
         mock_toolbox.clone.return_value = Mock()
         mock_toolbox.mate.return_value = None
         mock_toolbox.mutate.return_value = None
-        mock_create_toolbox.return_value = mock_toolbox
+        mock_toolbox.map.return_value = [(0.8, 0.6, 0.7, 0.2) for _ in range(10)]
+        mock_chromosome_info = {'total_length': 5}  # Mock chromosome info
+        mock_create_toolbox.return_value = (mock_toolbox, mock_chromosome_info)
 
         # Mock random for crossover/mutation
-        mock_random.side_effect = [0.5, 0.8] * 10  # Alternate below/above thresholds
+        mock_random.side_effect = [0.5, 0.8] * 15  # Alternate below/above thresholds
 
         # Mock individuals with fitness
         individuals = []
         for i in range(10):
             ind = Mock()
-            ind.fitness.values = [0.8, 0.6, 0.7, 0.2]
+            ind.fitness = Mock()
             individuals.append(ind)
 
         mock_toolbox.population.return_value = individuals
@@ -160,13 +164,15 @@ class TestRunGeneticAlgorithm:
         mock_toolbox.clone.return_value = Mock()
         mock_toolbox.mate.return_value = None
         mock_toolbox.mutate.return_value = None
-        mock_create_toolbox.return_value = mock_toolbox
+        mock_toolbox.map.return_value = [(0.9, 0.8, 0.85, 0.1) for _ in range(5)]
+        mock_chromosome_info = {'total_length': 3}
+        mock_create_toolbox.return_value = (mock_toolbox, mock_chromosome_info)
 
         # Set up individuals
         individuals = []
         for i in range(5):
             ind = Mock()
-            ind.fitness.values = [0.9, 0.8, 0.85, 0.1]
+            ind.fitness = Mock()
             individuals.append(ind)
 
         mock_toolbox.population.return_value = individuals
@@ -197,7 +203,15 @@ class TestRunGeneticAlgorithm:
             mock_toolbox.clone.return_value = Mock()
             mock_toolbox.mate.return_value = None
             mock_toolbox.mutate.return_value = None
-            mock_create.return_value = mock_toolbox
+            mock_toolbox.map.return_value = [(0.8, 0.6, 0.7, 0.2)]
+            mock_chromosome_info = {'total_length': 2}
+            mock_create.return_value = (mock_toolbox, mock_chromosome_info)
+
+            # Set up individual
+            ind = Mock()
+            ind.fitness = Mock()
+            mock_toolbox.population.return_value = [ind]
+            mock_toolbox.select.return_value = [ind]
 
             data = np.random.randn(10, 2)
             target = np.random.randint(0, 2, 10)
@@ -219,6 +233,7 @@ class TestGenerateHypotheses:
             ind = Mock()
             ind.fitness.values = [0.9, 0.7, 0.8, 0.2]
             ind.__getitem__ = Mock(side_effect=lambda idx: [1, 0, 1][idx])
+            ind.__len__ = Mock(return_value=3)
             mock_individuals.append(ind)
 
         mock_run_ga.return_value = mock_individuals
@@ -240,7 +255,7 @@ class TestGenerateHypotheses:
         assert 'parsimony_penalty' in hyp
         assert 'fitness' in hyp
 
-        assert hyp['features'] == [0, 2]  # Selected features
+        assert hyp['features'] == ['feature_0', 'feature_2']  # Selected features
         assert hyp['significance'] == 0.9
         assert hyp['fitness'] == 0.9 + 0.7 + 0.8 - 0.2  # sum of first 3 minus parsimony
 
@@ -259,6 +274,7 @@ class TestGenerateHypotheses:
             ind = Mock()
             ind.fitness.values = fitness
             ind.__getitem__ = Mock(side_effect=lambda idx: [1, 0, 1][idx])
+            ind.__len__ = Mock(return_value=3)
             individuals.append(ind)
 
         mock_run_ga.return_value = individuals
@@ -278,6 +294,7 @@ class TestGenerateHypotheses:
         mock_ind = Mock()
         mock_ind.fitness.values = [0.8, 0.6, 0.7, 0.2]
         mock_ind.__getitem__ = Mock(side_effect=lambda idx: [1, 0][idx])
+        mock_ind.__len__ = Mock(return_value=2)
         mock_run_ga.return_value = [mock_ind]
 
         data = np.random.randn(10, 2)
@@ -295,7 +312,12 @@ class TestGenerateHypotheses:
             pop_size=50,
             num_generations=20,
             cx_prob=0.9,
-            mut_prob=0.2  # Default value
+            mut_prob=0.2,
+            n_processes=1,
+            use_dask=False,
+            adaptive_params=False,
+            diversity_threshold=0.1,
+            convergence_threshold=0.01
         )
 
     @patch('greta_core.hypothesis_search.run_genetic_algorithm')
@@ -368,3 +390,76 @@ class TestHypothesisSearchIntegration:
         assert isinstance(hypotheses, list)
         if len(hypotheses) > 0:
             assert all(isinstance(h, dict) for h in hypotheses)
+
+    def test_generate_hypotheses_with_categorical_data(self):
+        """Test hypothesis generation with categorical features."""
+        # Create DataFrame with mixed data types
+        import pandas as pd
+        np.random.seed(42)
+
+        data = pd.DataFrame({
+            'numeric1': np.random.randn(50),
+            'numeric2': np.random.randn(50),
+            'categorical1': np.random.choice(['A', 'B', 'C'], 50),
+            'categorical2': np.random.choice(['X', 'Y'], 50)
+        })
+        target = np.random.randint(0, 2, 50)
+
+        # Test with one-hot encoding
+        hypotheses = generate_hypotheses(
+            data, target,
+            pop_size=10,
+            num_generations=2,
+            encoding_method='one_hot'
+        )
+
+        assert isinstance(hypotheses, list)
+        if len(hypotheses) > 0:
+            # Check that features include encoded categorical features
+            hyp = hypotheses[0]
+            assert 'features' in hyp
+            # Should have more features due to encoding
+            assert len(hyp['features']) >= 2  # At least original numeric features
+
+    def test_generate_hypotheses_with_target_encoding(self):
+        """Test hypothesis generation with target encoding."""
+        import pandas as pd
+        np.random.seed(42)
+
+        data = pd.DataFrame({
+            'numeric1': np.random.randn(50),
+            'categorical1': np.random.choice(['A', 'B', 'C'], 50),
+        })
+        target = np.random.randint(0, 2, 50)
+
+        # Test with target encoding
+        hypotheses = generate_hypotheses(
+            data, target,
+            pop_size=10,
+            num_generations=2,
+            encoding_method='target_encoding'
+        )
+
+        assert isinstance(hypotheses, list)
+        if len(hypotheses) > 0:
+            hyp = hypotheses[0]
+            assert 'features' in hyp
+            # Should include encoded categorical feature
+            assert any('categorical1' in f for f in hyp['features'])
+
+    def test_mixed_data_types_fitness_evaluation(self):
+        """Test fitness evaluation with mixed encoded data."""
+        # Create data with one-hot encoded features (simulating post-encoding)
+        data = np.random.randn(20, 5)
+        # Make some columns binary (one-hot encoded)
+        data[:, 2] = np.random.choice([0, 1], 20)
+        data[:, 3] = np.random.choice([0, 1], 20)
+        target = np.random.randint(0, 2, 20)
+
+        individual = [1, 1, 1, 0, 1]  # Select features 0, 1, 2, 4
+
+        fitness = evaluate_hypothesis(individual, data, target)
+
+        assert len(fitness) == 4
+        assert all(isinstance(val, float) for val in fitness)
+        # Should handle mixed binary and continuous features

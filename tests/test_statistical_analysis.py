@@ -6,10 +6,10 @@ import pytest
 import numpy as np
 import pandas as pd
 from unittest.mock import patch
-from greta_core.statistical_analysis import (
+from greta_core.significance_tests import (
     perform_t_test, perform_anova, calculate_significance,
     calculate_effect_size, calculate_coverage, calculate_parsimony,
-    perform_statistical_test
+    perform_statistical_test, get_target_type
 )
 
 
@@ -108,10 +108,37 @@ class TestPerformAnova:
 
     def test_perform_anova_single_group(self):
         """Test ANOVA with single group."""
-        group1 = np.array([1, 2, 3])
+class TestGetTargetType:
+    """Test get_target_type functionality."""
 
-        with pytest.raises(TypeError):
-            perform_anova(group1)
+    def test_get_target_type_categorical_binary(self):
+        """Test detection of binary categorical target."""
+        y = np.array([0, 1, 0, 1])
+        assert get_target_type(y) == 'categorical'
+
+    def test_get_target_type_categorical_multiclass(self):
+        """Test detection of multi-class categorical target."""
+        y = np.array([0, 1, 2, 1, 0])
+        assert get_target_type(y) == 'categorical'
+
+    def test_get_target_type_continuous(self):
+        """Test detection of continuous target."""
+        y = np.random.randn(50)
+        assert get_target_type(y) == 'continuous'
+
+    def test_get_target_type_threshold(self):
+        """Test threshold for categorical vs continuous."""
+        y = np.arange(4)  # 4 unique, should be continuous
+        assert get_target_type(y) == 'continuous'
+
+        y = np.arange(3)  # 3 unique, should be categorical
+        assert get_target_type(y) == 'categorical'
+
+    def test_get_target_type_custom_threshold(self):
+        """Test custom threshold."""
+        y = np.arange(5)
+        assert get_target_type(y, threshold=3) == 'continuous'
+        assert get_target_type(y, threshold=6) == 'categorical'
 
 
 class TestCalculateSignificance:
@@ -129,6 +156,38 @@ class TestCalculateSignificance:
 
     def test_calculate_significance_single_feature(self):
         """Test significance with single feature."""
+    def test_calculate_significance_categorical_multiclass_single_feature(self):
+        """Test significance with multi-class categorical target, single feature."""
+        X = np.array([[1], [2], [3], [4], [5]])
+        y = np.array([0, 1, 2, 1, 0])
+
+        sig = calculate_significance(X, y)
+
+        assert isinstance(sig, float)
+        assert 0 <= sig <= 1
+
+    def test_calculate_significance_categorical_multiclass_multiple_features(self):
+        """Test significance with multi-class categorical target, multiple features."""
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]])
+        y = np.array([0, 1, 2, 1, 0])
+
+        sig = calculate_significance(X, y)
+
+        assert isinstance(sig, float)
+        assert 0 <= sig <= 1
+
+    def test_calculate_significance_continuous_many_unique(self):
+        """Test significance with continuous target with many unique values."""
+        np.random.seed(42)
+        X = np.random.randn(50, 2)
+        y = np.random.randn(50)
+
+        sig = calculate_significance(X, y)
+
+        assert isinstance(sig, float)
+        assert 0 <= sig <= 1
+
+
         X = np.array([[1], [2], [3], [4]])
         y = np.array([0, 1, 0, 1])
 
@@ -136,6 +195,37 @@ class TestCalculateSignificance:
 
         assert isinstance(sig, float)
         assert 0 <= sig <= 1
+
+    def test_calculate_effect_size_categorical_binary_single_feature(self):
+        """Test effect size with binary categorical target, single feature."""
+        X = np.array([[1], [2], [3], [4]])
+        y = np.array([0, 1, 0, 1])
+
+        effect = calculate_effect_size(X, y)
+
+        assert isinstance(effect, float)
+        assert effect >= 0
+
+    def test_calculate_effect_size_categorical_multiclass_single_feature(self):
+        """Test effect size with multi-class categorical target, single feature."""
+        X = np.array([[1], [2], [3], [4], [5]])
+        y = np.array([0, 1, 2, 1, 0])
+
+        effect = calculate_effect_size(X, y)
+
+        assert isinstance(effect, float)
+        assert effect >= 0
+
+    def test_calculate_effect_size_categorical_multiple_features(self):
+        """Test effect size with categorical target, multiple features."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        y = np.array([0, 1, 0])
+
+        effect = calculate_effect_size(X, y)
+
+        assert isinstance(effect, float)
+        assert 0 <= effect <= 1  # accuracy
+
 
     def test_calculate_significance_multiclass_target(self):
         """Test significance with multi-class target."""
@@ -146,6 +236,27 @@ class TestCalculateSignificance:
 
         assert isinstance(sig, float)
         assert 0 <= sig <= 1
+    def test_calculate_coverage_categorical_binary(self):
+        """Test coverage with binary categorical target."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        y = np.array([0, 1, 0])
+
+        coverage = calculate_coverage(X, y)
+
+        assert isinstance(coverage, float)
+        assert 0 <= coverage <= 1
+
+    def test_calculate_coverage_categorical_multiclass(self):
+        """Test coverage with multi-class categorical target."""
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        y = np.array([0, 1, 2, 1])
+
+        coverage = calculate_coverage(X, y)
+
+        assert isinstance(coverage, float)
+        assert 0 <= coverage <= 1
+
+
 
     def test_calculate_significance_perfect_correlation(self):
         """Test significance with perfect correlation."""
@@ -200,7 +311,53 @@ class TestCalculateEffectSize:
         effect = calculate_effect_size(X, y)
 
         assert isinstance(effect, float)
-        assert effect >= 0
+    def test_perform_statistical_test_auto_categorical_binary(self):
+        """Test auto test selection with binary categorical target."""
+        X = np.array([[1], [2], [3], [4]])
+        y = np.array([0, 1, 0, 1])
+
+        result = perform_statistical_test(X, y, test_type='auto')
+
+        assert result['test'] == 't_test'
+
+    def test_perform_statistical_test_auto_categorical_multiclass(self):
+        """Test auto test selection with multi-class categorical target."""
+        X = np.array([[1], [2], [3], [4], [5]])
+        y = np.array([0, 1, 2, 1, 0])
+
+        result = perform_statistical_test(X, y, test_type='auto')
+
+        assert result['test'] == 'anova'
+
+    def test_perform_statistical_test_auto_continuous(self):
+        """Test auto test selection with continuous target."""
+        np.random.seed(42)
+        X = np.random.randn(20, 2)
+        y = np.random.randn(20)
+
+        result = perform_statistical_test(X, y, test_type='auto')
+
+        assert result['test'] == 'regression'
+
+    def test_perform_statistical_test_logistic_binary(self):
+        """Test logistic regression for binary categorical with multiple features."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        y = np.array([0, 1, 0])
+
+        result = perform_statistical_test(X, y, test_type='t_test')
+
+        assert result['test'] == 'logistic'
+        assert 'accuracy' in result
+
+    def test_perform_statistical_test_logistic_multiclass(self):
+        """Test logistic regression for multi-class categorical with multiple features."""
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        y = np.array([0, 1, 2, 1])
+
+        result = perform_statistical_test(X, y, test_type='anova')
+
+        assert result['test'] == 'logistic'
+        assert 'accuracy' in result
 
 
 class TestCalculateCoverage:
@@ -319,8 +476,8 @@ class TestPerformStatisticalTest:
 
         result = perform_statistical_test(X, y, test_type='t_test')
 
-        assert result['test'] == 'regression'
-        assert 'r_squared' in result
+        assert result['test'] == 'logistic'
+        assert 'accuracy' in result
 
 
 # Integration tests

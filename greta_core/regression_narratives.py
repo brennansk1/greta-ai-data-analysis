@@ -25,9 +25,11 @@ def generate_regression_narrative(hypothesis: Dict[str, Any], feature_names: Lis
     Returns:
         Regression narrative.
     """
+    # hypothesis['features'] now contains feature names directly
+    features = hypothesis['features']
+
     if data is None or target is None:
         # Fallback to basic narrative if data not available
-        features = [feature_names[i] for i in hypothesis['features']]
         if len(features) == 1:
             narrative = f"The analysis suggests that {features[0]} has a {effect} relationship with the target variable. "
         else:
@@ -36,8 +38,9 @@ def generate_regression_narrative(hypothesis: Dict[str, Any], feature_names: Lis
         narrative += f"This finding has {confidence} statistical confidence and {coverage_desc} in the data."
         return narrative
 
-    features = [feature_names[i] for i in hypothesis['features']]
-    selected_data = data[:, hypothesis['features']]
+    # For regression analysis, we need to map feature names back to indices
+    feature_indices = [feature_names.index(feat) for feat in features]
+    selected_data = data[:, feature_indices]
 
     # Perform regression to get detailed results
     reg_results = perform_multiple_linear_regression(selected_data, target)

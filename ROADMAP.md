@@ -70,13 +70,18 @@ This document outlines the complete phased development roadmap for Project Greta
 **Enhanced Feature Selection Pipeline (Completed 2025-09-27):**
 - [x] Implement parallel execution for genetic algorithm optimization.
 - [x] Add dynamic feature engineering (polynomial and interaction terms).
-- [x] Integrate importance explainability with SHAP-based rankings.
+- [x] Integrate importance explainability with SHAP/permutation importance rankings.
 - [x] Implement stability selection with bootstrap validation.
 - [x] Add causal prioritization for feature weighting.
 - [x] Enable adaptive parameters for dynamic GA tuning.
 - [x] Support multi-modal handling for mixed data types.
 - [x] Validate pipeline on real-world churn dataset (Telco Customer Churn).
+- [x] Validate pipeline on large-scale retail dataset (OnlineRetail - 500K+ transactions).
+- [x] Validate pipeline on wine quality dataset (UCI Wine Quality - chemical features).
 - [x] Generate comprehensive PDF reports with business insights.
+- [x] Fix CLI integration issues and ensure robust error handling.
+- [x] Update documentation and guides for CLI usage.
+- [x] Implement causal analysis integration with DoWhy framework.
 
 ## Phase 4: Enterprise Readiness & Scalability
 **Goal:** Shift focus to performance and collaboration by re-architecting for big data and adding team management features.

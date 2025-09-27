@@ -45,8 +45,19 @@ def generate_report(results: Dict[str, Any], format_type: str = 'text') -> str:
     hypotheses = results['hypotheses']
     summary_narrative = results['summary_narrative']
     detailed_report = results['detailed_report']
+    causal_results = results.get('causal_results')
 
     if format_type == 'text':
+        causal_section = ""
+        if causal_results:
+            from greta_core.causal_narratives import generate_causal_narrative
+            causal_section = f"""
+
+Causal Analysis
+---------------
+{generate_causal_narrative(causal_results)}
+"""
+
         report = f"""
 GRETA Analysis Report
 =====================
@@ -64,7 +75,7 @@ Summary
 
 Detailed Findings
 -----------------
-{detailed_report}
+{detailed_report}{causal_section}
 
 Configuration Used
 ------------------
@@ -75,6 +86,16 @@ Hypothesis search: {metadata['config']['hypothesis_search']}
         return report.strip()
 
     elif format_type == 'markdown':
+        causal_section = ""
+        if causal_results:
+            from greta_core.causal_narratives import generate_causal_narrative
+            causal_section = f"""
+
+## Causal Analysis
+
+{generate_causal_narrative(causal_results)}
+"""
+
         report = f"""# GRETA Analysis Report
 
 ## Data Summary
@@ -90,7 +111,7 @@ Hypothesis search: {metadata['config']['hypothesis_search']}
 
 ## Detailed Findings
 
-{detailed_report}
+{detailed_report}{causal_section}
 
 ## Configuration Used
 
@@ -112,6 +133,16 @@ Hypothesis search: {metadata['config']['hypothesis_search']}
         return report
 
     elif format_type == 'html':
+        causal_section = ""
+        if causal_results:
+            from greta_core.causal_narratives import generate_causal_narrative
+            causal_section = f"""
+    <h2>Causal Analysis</h2>
+    <div class="summary">
+        {generate_causal_narrative(causal_results).replace(chr(10), '<br>')}
+    </div>
+"""
+
         report = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -142,7 +173,7 @@ Hypothesis search: {metadata['config']['hypothesis_search']}
     </div>
 
     <h2>Detailed Findings</h2>
-    <pre>{detailed_report}</pre>
+    <pre>{detailed_report}</pre>{causal_section}
 
     <h2>Configuration Used</h2>
     <div class="config">
@@ -179,37 +210,53 @@ Hypothesis search: {metadata['config']['hypothesis_search']}
         pdf.ln(10)
 
         # Data Summary
-        pdf.set_font("Helvetica", "B", 14)
-        pdf.cell(200, 10, "Data Summary", ln=True)
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.cell(200, 12, "What We Analyzed", ln=True)
         pdf.set_font("Helvetica", "", 12)
-        pdf.cell(200, 10, f"Dataset shape: {metadata['data_shape']}", ln=True)
-        pdf.cell(200, 10, f"Target column: {metadata['target_column']}", ln=True)
-        pdf.cell(200, 10, f"Number of features: {len(metadata['feature_names'])}", ln=True)
-        pdf.cell(200, 10, f"Number of hypotheses generated: {metadata['num_hypotheses']}", ln=True)
+        pdf.cell(200, 8, f"- Dataset with {metadata['data_shape'][0]:,} rows and {metadata['data_shape'][1]} columns", ln=True)
+        pdf.cell(200, 8, f"- Predicting: {metadata['target_column']}", ln=True)
+        pdf.cell(200, 8, f"- Features considered: {len(metadata['feature_names'])}", ln=True)
+        pdf.cell(200, 8, f"- Ideas tested: {metadata['num_hypotheses']}", ln=True)
+        pdf.ln(5)
+
+        # Enhanced Features Used
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.cell(200, 10, "Enhanced Pipeline Features Applied:", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(200, 6, "* Parallel Execution - Multi-process genetic algorithm", ln=True)
+        pdf.cell(200, 6, "* Dynamic Feature Engineering - Auto polynomial & interaction terms", ln=True)
+        pdf.cell(200, 6, "* Importance Explainability - SHAP/permutation importance rankings", ln=True)
+        pdf.cell(200, 6, "* Stability Selection - Bootstrap validation for robustness", ln=True)
+        pdf.cell(200, 6, "* Causal Prioritization - Causal relationship weighting", ln=True)
+        pdf.cell(200, 6, "* Adaptive Parameters - Dynamic GA parameter adjustment", ln=True)
+        pdf.cell(200, 6, "* Multi-modal Handling - Advanced categorical encoding", ln=True)
         pdf.ln(10)
 
         # Summary
-        pdf.set_font("Helvetica", "B", 14)
-        pdf.cell(200, 10, "Summary", ln=True)
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.cell(200, 12, "Key Findings", ln=True)
         pdf.set_font("Helvetica", "", 12)
-        pdf.multi_cell(200, 10, summary_narrative.replace('\n', ' '))
+        pdf.multi_cell(200, 8, summary_narrative.replace('\n', ' '))
         pdf.ln(10)
 
         # Top Hypotheses
-        pdf.set_font("Helvetica", "B", 14)
-        pdf.cell(200, 10, "Top Hypotheses", ln=True)
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.cell(200, 12, "Detailed Results", ln=True)
         pdf.ln(5)
 
         for i, hyp in enumerate(hypotheses, 1):
-            feature_names = [metadata['feature_names'][f] for f in hyp['features']]
-            analysis_type = hyp['analysis_type']
+            # hyp['features'] now contains feature names directly
+            feature_names = hyp['features']
+            analysis_type = hyp.get('analysis_type', 'basic')
             significance = hyp['significance']
             effect_size = hyp['effect_size']
-            text = f"Analysis type: {analysis_type}\nFeatures: {', '.join(feature_names)}\nSignificance: {significance}\nEffect size: {effect_size}"
-            pdf.set_font("Helvetica", "B", 12)
-            pdf.cell(200, 10, f"Hypothesis {i}", ln=True)
-            pdf.set_font("Helvetica", "", 11)
-            pdf.multi_cell(200, 8, text)
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(200, 10, f"Idea {i}", ln=True)
+            pdf.set_font("Helvetica", "", 12)
+            pdf.cell(200, 8, f"- Type: {analysis_type}", ln=True)
+            pdf.cell(200, 8, f"- Features: {', '.join(feature_names)}", ln=True)
+            pdf.cell(200, 8, f"- How sure we are: {significance:.1%}", ln=True)
+            pdf.cell(200, 8, f"- Impact: {'Powerful' if effect_size > 0.5 else 'Noticeable' if effect_size > 0.3 else 'Subtle'}", ln=True)
             pdf.ln(5)
 
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')

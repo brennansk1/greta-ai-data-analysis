@@ -24,7 +24,8 @@ def generate_hypothesis_narrative(hypothesis: Dict[str, Any], feature_names: Lis
     Returns:
         Plain-English description of the hypothesis.
     """
-    features = [feature_names[i] for i in hypothesis['features']]
+    # hypothesis['features'] now contains feature names directly, not indices
+    features = hypothesis['features']
     significance = hypothesis['significance']
     effect_size = hypothesis['effect_size']
     coverage = hypothesis['coverage']
@@ -220,6 +221,7 @@ def create_report(hypotheses: List[Dict[str, Any]], feature_names: List[str], st
 
     report += "Detailed Findings:\n"
     for i, (hyp, stat) in enumerate(zip(hypotheses[:3], stat_results[:3]), 1):  # Top 3
+        # Pass feature_names but the function now handles feature names directly
         report += f"{i}. {generate_hypothesis_narrative(hyp, feature_names, data, target)}\n"
         report += f"   {generate_insight_narrative(stat, hyp)}\n\n"
 

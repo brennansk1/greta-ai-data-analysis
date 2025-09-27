@@ -1,7 +1,7 @@
 data:
-  source: WA_Fn-UseC_-Telco-Customer-Churn.csv
+  source: winequality-red.csv
   type: csv
-  target_column: Churn
+  target_column: quality
   sheet_name: null
 preprocessing:
   missing_strategy: mean
@@ -10,10 +10,10 @@ preprocessing:
   normalize_types: true
   feature_engineering: true
 hypothesis_search:
-  pop_size: 5
-  num_generations: 3
+  pop_size: 100
+  num_generations: 50
   cx_prob: 0.7
   mut_prob: 0.2
 output:
   format: json
-  file: results.json
+  file: null

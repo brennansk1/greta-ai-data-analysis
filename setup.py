@@ -36,6 +36,9 @@ setup(
         "scikit-learn>=1.0.0",
         "deap>=1.3.0",
         "openpyxl>=3.0.0",  # For Excel support
+        "dask>=2022.0.0",
+        "dask[dataframe]>=2022.0.0",
+        "dowhy>=0.10.0",
     ],
     extras_require={
         "dev": ["pytest>=6.0", "pytest-cov"],

@@ -1,51 +1,66 @@
 import streamlit as st
+from greta_web.database import get_user_projects
+from greta_web.auth import get_current_user
 
 def show():
-    st.title("🔍 Welcome to Greta Web App")
+    user = get_current_user()
+    st.title(f"🔍 Welcome back, {user['username']}!")
     st.markdown("---")
 
-    st.header("Discover Insights in Your Data with AI-Powered Analysis")
+    st.header("Your Projects Dashboard")
 
-    st.markdown("""
-    Greta is an intelligent data analysis tool that uses genetic algorithms to automatically explore your data
-    and uncover meaningful relationships and patterns. No advanced statistical knowledge required!
+    projects = get_user_projects(user['id'])
 
-    **What Greta can do for you:**
-    - 🔄 **Automated Analysis**: Upload your data and let Greta find the most promising hypotheses
-    - 📊 **Data Health Check**: Get instant feedback on data quality and cleaning suggestions
-    - 🎯 **Targeted Insights**: Focus analysis on specific outcomes you're interested in
-    - 📈 **Interactive Visualizations**: Explore results with beautiful, interactive charts
-    - 📝 **Plain-English Explanations**: Understand findings in simple, actionable language
+    if projects:
+        owned_projects = [p for p in projects if p['permission'] == 'admin']
+        shared_projects = [p for p in projects if p['permission'] != 'admin']
 
-    **How it works:**
-    1. **Upload** your CSV or Excel data
-    2. **Review** data quality and apply cleaning if needed
-    3. **Select** your target variable and analysis parameters
-    4. **Discover** ranked insights and narratives
-    """)
+        col1, col2 = st.columns(2)
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+        with col1:
+            st.subheader("📁 Your Projects")
+            if owned_projects:
+                for project in owned_projects:
+                    with st.expander(f"{project['name']} ({project['permission']})"):
+                        st.write(f"Description: {project['description'] or 'No description'}")
+                        st.write(f"Created: {project['created_at']}")
+                        if st.button(f"Open {project['name']}", key=f"open_{project['id']}"):
+                            # For now, just go to data upload
+                            st.session_state.page = 'data_upload'
+                            st.rerun()
+            else:
+                st.info("You haven't created any projects yet.")
 
-    with col2:
-        if st.button("🚀 Start New Analysis", type="primary", use_container_width=True):
-            # Reset session state for new project
-            st.session_state.raw_data = None
-            st.session_state.cleaned_data = None
-            st.session_state.target_column = None
-            st.session_state.hypotheses = None
-            st.session_state.results = None
-            st.session_state.feature_names = None
-            st.session_state.page = 'data_upload'
-            st.rerun()
+        with col2:
+            st.subheader("🤝 Shared Projects")
+            if shared_projects:
+                for project in shared_projects:
+                    with st.expander(f"{project['name']} ({project['permission']})"):
+                        st.write(f"Description: {project['description'] or 'No description'}")
+                        st.write(f"Created: {project['created_at']}")
+                        if st.button(f"Open {project['name']}", key=f"open_shared_{project['id']}"):
+                            st.session_state.page = 'data_upload'
+                            st.rerun()
+            else:
+                st.info("No projects shared with you yet.")
+    else:
+        st.info("You don't have any projects yet. Create your first project below!")
 
     st.markdown("---")
-    st.subheader("Quick Tips")
-    st.info("""
-    💡 **Data Format**: Greta works best with tabular data (CSV, Excel) with clear column headers
-    💡 **Data Size**: Start with datasets up to 10,000 rows for optimal performance
-    💡 **Target Variable**: Choose a numeric column you want to understand or predict
-    💡 **Privacy**: Your data stays local - no uploads to external servers
-    """)
+    st.subheader("Create New Project")
+    with st.form("create_project"):
+        project_name = st.text_input("Project Name")
+        project_desc = st.text_area("Description (optional)")
+        submitted = st.form_submit_button("Create Project")
+
+        if submitted and project_name:
+            from greta_web.database import create_project
+            project_id = create_project(project_name, project_desc, user['id'])
+            if project_id:
+                st.success("Project created successfully!")
+                st.rerun()
+            else:
+                st.error("Failed to create project")
 
     st.markdown("---")
     st.caption("Powered by Greta Core Engine | Built with Streamlit")

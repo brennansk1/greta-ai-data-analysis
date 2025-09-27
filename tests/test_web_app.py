@@ -12,6 +12,47 @@ import os
 # Mock streamlit to avoid import issues during testing
 sys.modules['streamlit'] = Mock()
 
+
+class SessionStateMock(dict):
+    """Mock for st.session_state that supports both dict and attribute access."""
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(f"'SessionStateMock' object has no attribute '{key}'")
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+
+def mock_columns(n):
+    """Mock for st.columns that returns column objects that support context management."""
+    if isinstance(n, list):
+        # Handle st.columns([1, 2, 1]) case
+        num_cols = len(n)
+    else:
+        # Handle st.columns(3) case
+        num_cols = n
+    columns = []
+    for _ in range(num_cols):
+        col = Mock()
+        col.__enter__ = Mock(return_value=col)
+        col.__exit__ = Mock(return_value=None)
+        columns.append(col)
+    return columns
+
+
+def mock_tabs(*tab_names):
+    """Mock for st.tabs that returns tab objects that support context management."""
+    tabs = []
+    for _ in tab_names:
+        tab = Mock()
+        tab.__enter__ = Mock(return_value=tab)
+        tab.__exit__ = Mock(return_value=None)
+        tabs.append(tab)
+    return tabs
+
+
 # Now import the web app modules
 from greta_web.pages import data_upload, data_health, analysis, results
 
@@ -33,21 +74,24 @@ class TestDataUploadPage:
         mock_file.getvalue.return_value = b'A,B\n1,2\n3,4'
         mock_file_uploader.return_value = mock_file
         mock_st.file_uploader = mock_file_uploader
+        mock_st.tabs.return_value = mock_tabs("File Upload", "Database Connection")
+        mock_st.columns = mock_columns
 
         # Mock core functions
         mock_df = pd.DataFrame({'A': [1, 3], 'B': [2, 4]})
         mock_csv.return_value = mock_df
         mock_schema.return_value = {
             'shape': (2, 2),
+            'dtypes': {'A': 'int64', 'B': 'int64'},
             'columns': {'A': {'dtype': 'int64', 'null_count': 0, 'unique_count': 2, 'sample_values': [1, 3]}}
         }
         mock_validate.return_value = []
 
         # Mock session state
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'raw_data': None,
             'feature_names': None
-        }
+        })
 
         # Call the function
         data_upload.show()
@@ -68,11 +112,13 @@ class TestDataUploadPage:
         mock_file.getvalue.return_value = b'excel data'
         mock_file_uploader.return_value = mock_file
         mock_st.file_uploader = mock_file_uploader
+        mock_st.tabs.return_value = mock_tabs("File Upload", "Database Connection")
+        mock_st.columns = mock_columns
 
         mock_df = pd.DataFrame({'X': [1, 2], 'Y': [3, 4]})
         mock_excel.return_value = mock_df
 
-        mock_st.session_state = {'raw_data': None, 'feature_names': None}
+        mock_st.session_state = SessionStateMock({'raw_data': None, 'feature_names': None})
 
         data_upload.show()
 
@@ -85,8 +131,10 @@ class TestDataUploadPage:
         mock_file_uploader = Mock()
         mock_file_uploader.return_value = None
         mock_st.file_uploader = mock_file_uploader
+        mock_st.tabs.return_value = mock_tabs("File Upload", "Database Connection")
+        mock_st.columns = mock_columns
 
-        mock_st.session_state = {'raw_data': None}
+        mock_st.session_state = SessionStateMock({'raw_data': None})
 
         data_upload.show()
 
@@ -99,12 +147,15 @@ class TestDataUploadPage:
         mock_file_uploader = Mock()
         mock_file = Mock()
         mock_file.name = 'test.csv'
+        mock_file.getvalue.return_value = b'test data'  # Fix: return bytes instead of Mock
         mock_file_uploader.return_value = mock_file
         mock_st.file_uploader = mock_file_uploader
+        mock_st.tabs.return_value = mock_tabs("File Upload", "Database Connection")
+        mock_st.columns = mock_columns
 
         mock_csv.side_effect = ValueError("Load failed")
 
-        mock_st.session_state = {'raw_data': None}
+        mock_st.session_state = SessionStateMock({'raw_data': None})
 
         data_upload.show()
 
@@ -117,12 +168,22 @@ class TestDataUploadPage:
         mock_file_uploader = Mock()
         mock_file_uploader.return_value = None
         mock_st.file_uploader = mock_file_uploader
+        mock_st.tabs.return_value = mock_tabs("File Upload", "Database Connection")
+        mock_st.columns = mock_columns
+        spinner_mock = Mock()
+        spinner_mock.__enter__ = Mock(return_value=None)
+        spinner_mock.__exit__ = Mock(return_value=None)
+        mock_st.spinner.return_value = spinner_mock
+        expander_mock = Mock()
+        expander_mock.__enter__ = Mock(return_value=None)
+        expander_mock.__exit__ = Mock(return_value=None)
+        mock_st.expander.return_value = expander_mock
 
         mock_button = Mock()
         mock_button.return_value = True
         mock_st.button = mock_button
 
-        mock_st.session_state = {'raw_data': None, 'feature_names': None}
+        mock_st.session_state = SessionStateMock({'raw_data': None, 'feature_names': None})
 
         data_upload.show()
 
@@ -146,10 +207,11 @@ class TestDataHealthPage:
             'C': ['x', 'y', 'z']
         })
 
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'raw_data': test_df,
             'cleaned_data': test_df.copy()
-        }
+        })
+        mock_st.columns = mock_columns
 
         # Mock profile
         mock_profile.return_value = {
@@ -172,7 +234,7 @@ class TestDataHealthPage:
     @patch('greta_web.pages.data_health.st')
     def test_data_health_no_data(self, mock_st):
         """Test data health page when no data is available."""
-        mock_st.session_state = {'raw_data': None}
+        mock_st.session_state = SessionStateMock({'raw_data': None})
 
         data_health.show()
 
@@ -185,10 +247,11 @@ class TestDataHealthPage:
         """Test missing value handling in data health."""
         test_df = pd.DataFrame({'A': [1, None, 3], 'B': [1, 2, 3]})
 
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'raw_data': test_df,
             'cleaned_data': test_df.copy()
-        }
+        })
+        mock_st.columns = mock_columns
 
         # Mock button click
         mock_button = Mock()
@@ -211,10 +274,11 @@ class TestDataHealthPage:
         """Test outlier removal in data health."""
         test_df = pd.DataFrame({'A': [1, 2, 100], 'B': [1, 2, 3]})
 
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'raw_data': test_df,
             'cleaned_data': test_df.copy()
-        }
+        })
+        mock_st.columns = mock_columns
 
         mock_detect.return_value = {'A': [2], 'B': []}  # Outlier at index 2
         mock_remove.return_value = test_df.drop(2)  # Remove outlier
@@ -242,11 +306,12 @@ class TestAnalysisPage:
             'target': [0, 1, 0, 1, 0]
         })
 
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'cleaned_data': test_df,
             'target_column': 'target',
             'feature_names': ['feature1', 'feature2']
-        }
+        })
+        mock_st.columns = mock_columns
 
         # Mock hypotheses generation
         mock_hypotheses = [
@@ -275,7 +340,7 @@ class TestAnalysisPage:
     @patch('greta_web.pages.analysis.st')
     def test_analysis_no_data(self, mock_st):
         """Test analysis page when no cleaned data is available."""
-        mock_st.session_state = {'cleaned_data': None}
+        mock_st.session_state = SessionStateMock({'cleaned_data': None})
 
         analysis.show()
 
@@ -289,7 +354,7 @@ class TestAnalysisPage:
             'another_text': ['x', 'y', 'z']
         })
 
-        mock_st.session_state = {'cleaned_data': test_df}
+        mock_st.session_state = SessionStateMock({'cleaned_data': test_df})
 
         analysis.show()
 
@@ -304,10 +369,11 @@ class TestAnalysisPage:
             'target': [0, 1, 0, 1, 0]
         })
 
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'cleaned_data': test_df,
             'target_column': 'target'
-        }
+        })
+        mock_st.columns = mock_columns
 
         mock_hypotheses = [{'features': [0], 'significance': 0.8}]
         mock_generate.return_value = mock_hypotheses
@@ -339,16 +405,17 @@ class TestResultsPage:
         })
 
         hypotheses = [
-            {'features': [0], 'significance': 0.9, 'effect_size': 0.7, 'fitness': 1.8},
-            {'features': [1], 'significance': 0.8, 'effect_size': 0.5, 'fitness': 1.4}
+            {'features': [0], 'significance': 0.9, 'effect_size': 0.7, 'coverage': 0.8, 'fitness': 1.8, 'analysis_type': 'regression'},
+            {'features': [1], 'significance': 0.8, 'effect_size': 0.5, 'coverage': 0.6, 'fitness': 1.4, 'analysis_type': 'correlation'}
         ]
 
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'hypotheses': hypotheses,
             'feature_names': ['feature1', 'feature2'],
             'target_column': 'target',
             'cleaned_data': test_df
-        }
+        })
+        mock_st.columns = mock_columns
 
         mock_summary.return_value = "Analysis summary text"
         mock_narrative.return_value = "Hypothesis narrative"
@@ -361,7 +428,7 @@ class TestResultsPage:
     @patch('greta_web.pages.results.st')
     def test_results_no_hypotheses(self, mock_st):
         """Test results page when no hypotheses are available."""
-        mock_st.session_state = {'hypotheses': None}
+        mock_st.session_state = SessionStateMock({'hypotheses': None})
 
         results.show()
 
@@ -371,15 +438,16 @@ class TestResultsPage:
     @patch('greta_web.pages.results.generate_hypothesis_narrative')
     def test_results_download_csv(self, mock_narrative, mock_st):
         """Test CSV download functionality."""
-        hypotheses = [{'features': [0], 'significance': 0.9, 'effect_size': 0.7, 'coverage': 0.8, 'fitness': 1.8}]
+        hypotheses = [{'features': [0], 'significance': 0.9, 'effect_size': 0.7, 'coverage': 0.8, 'fitness': 1.8, 'analysis_type': 'regression'}]
         feature_names = ['feature1']
 
-        mock_st.session_state = {
+        mock_st.session_state = SessionStateMock({
             'hypotheses': hypotheses,
             'feature_names': feature_names,
             'target_column': 'target',
             'cleaned_data': pd.DataFrame({'feature1': [1, 2], 'target': [0, 1]})
-        }
+        })
+        mock_st.columns = mock_columns
 
         mock_narrative.return_value = "Test narrative"
 
@@ -405,7 +473,7 @@ class TestWebAppIntegration:
     def test_complete_workflow(self, mock_results_st, mock_analysis_st, mock_health_st, mock_upload_st):
         """Test complete web app workflow."""
         # Mock session state across all pages
-        session_state = {
+        session_state = SessionStateMock({
             'page': 'welcome',
             'raw_data': None,
             'cleaned_data': None,
@@ -413,11 +481,13 @@ class TestWebAppIntegration:
             'hypotheses': None,
             'results': None,
             'feature_names': None
-        }
+        })
 
         # Set up mocks
         for mock_st in [mock_upload_st, mock_health_st, mock_analysis_st, mock_results_st]:
             mock_st.session_state = session_state
+            if mock_st == mock_upload_st:
+                mock_st.tabs = mock_tabs
 
         # Simulate workflow
         # 1. Data upload

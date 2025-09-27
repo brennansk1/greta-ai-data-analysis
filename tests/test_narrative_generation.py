@@ -3,7 +3,7 @@ Comprehensive tests for narrative_generation module using pytest.
 """
 
 import pytest
-from greta_core.narrative_generation import (
+from greta_core.summary_narratives import (
     generate_hypothesis_narrative, generate_summary_narrative,
     generate_insight_narrative, create_report
 )

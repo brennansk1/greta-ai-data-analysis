@@ -85,7 +85,7 @@ def save_config(config: GretaConfig, config_path: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(path, 'w') as f:
-        yaml.dump(config.dict(), f, default_flow_style=False, sort_keys=False)
+        yaml.dump(config.model_dump(), f, default_flow_style=False, sort_keys=False)
 
 
 def validate_config(config: GretaConfig) -> list:

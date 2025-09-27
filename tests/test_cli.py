@@ -7,7 +7,7 @@ import json
 import yaml
 from pathlib import Path
 from unittest.mock import Mock, patch, call
-from click.testing import CliRunner
+from typer.testing import CliRunner
 from greta_cli.cli.main import app, init, run, report
 from greta_cli.config import GretaConfig, DataConfig, PreprocessingConfig
 
@@ -89,8 +89,8 @@ class TestInitCommand:
             assert config.data.target_column == 'outcome'
 
     @patch('greta_cli.cli.main.validate_config')
-    def test_init_command_validation_failure(self, mock_validate):
-        """Test init command when validation fails."""
+    def test_init_command_validation_warnings(self, mock_validate):
+        """Test init command when validation shows warnings."""
         mock_validate.return_value = ['Invalid data type']
 
         runner = CliRunner()
@@ -99,8 +99,9 @@ class TestInitCommand:
 
             result = runner.invoke(app, ['init', '--data-source', 'test.csv'])
 
-            assert result.exit_code == 1
-            assert 'Configuration validation failed' in result.output
+            assert result.exit_code == 0
+            assert 'Configuration warnings:' in result.output
+            assert 'Invalid data type' in result.output
 
 
 class TestRunCommand:
@@ -347,15 +348,22 @@ class TestCLIIntegration:
     @patch('greta_cli.cli.main.run_analysis_pipeline')
     @patch('greta_cli.cli.main.load_config')
     @patch('greta_cli.cli.main.format_results')
-    def test_full_cli_workflow(self, mock_format, mock_load, mock_run):
+    @patch('greta_cli.cli.main.save_config')
+    @patch('greta_cli.cli.main.validate_config')
+    @patch('greta_cli.cli.main.generate_report')
+    def test_full_cli_workflow(self, mock_generate, mock_validate, mock_save, mock_format, mock_load, mock_run):
         """Test complete CLI workflow from init to report."""
-        mock_config = Mock()
+        from greta_cli.config import GretaConfig, DataConfig
+
+        mock_config = GretaConfig(data=DataConfig(source='data.csv', type='csv', target_column='E'))
         mock_load.return_value = mock_config
+        mock_validate.return_value = []
         mock_run.return_value = {
             'hypotheses': [{'features': [0], 'significance': 0.9}],
             'metadata': {'data_shape': (100, 5)}
         }
         mock_format.return_value = '{"results": "test"}'
+        mock_generate.return_value = 'Generated report'
 
         runner = CliRunner()
         with runner.isolated_filesystem():

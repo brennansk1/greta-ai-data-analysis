@@ -5,10 +5,10 @@ Comprehensive tests for preprocessing module using pytest.
 import pytest
 import pandas as pd
 import numpy as np
-from greta_core.preprocessing import (
-    profile_data, handle_missing_values, detect_outliers,
-    normalize_data_types, remove_outliers, basic_feature_engineering
-)
+from greta_core.data_profiling import profile_data, normalize_data_types
+from greta_core.missing_value_handling import handle_missing_values
+from greta_core.outlier_detection import detect_outliers, remove_outliers
+from greta_core.feature_engineering import basic_feature_engineering
 
 
 class TestProfileData:
@@ -20,8 +20,8 @@ class TestProfileData:
 
         assert 'shape' in profile
         assert 'columns' in profile
-        assert profile['shape'] == (5, 6)
-        assert len(profile['columns']) == 6
+        assert profile['shape'] == (5, 7)
+        assert len(profile['columns']) == 7
 
     def test_profile_data_numeric_columns(self, messy_data):
         """Test profiling of numeric columns."""
@@ -113,7 +113,7 @@ class TestHandleMissingValues:
 
         # Should drop the mostly_null column
         assert 'mostly_null' not in cleaned.columns
-        assert cleaned.shape[1] == 6  # Original 6 + 1 - 1 dropped
+        assert cleaned.shape[1] == 7  # Original 7 + 1 - 1 dropped
 
     def test_handle_missing_values_no_nulls(self):
         """Test handling when no missing values exist."""
@@ -301,7 +301,7 @@ class TestPreprocessingIntegration:
         """Test complete preprocessing pipeline."""
         # Profile
         profile = profile_data(messy_data)
-        assert profile['shape'] == (5, 6)
+        assert profile['shape'] == (5, 7)
 
         # Handle missing values
         cleaned = handle_missing_values(messy_data, strategy='mean')
