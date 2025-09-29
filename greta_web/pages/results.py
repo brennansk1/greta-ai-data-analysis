@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from greta_core.summary_narratives import generate_hypothesis_narrative, generate_summary_narrative
+from greta_core.narratives.summary_narratives import generate_hypothesis_narrative, generate_summary_narrative
 
 def show():
     st.title("📊 Analysis Results")

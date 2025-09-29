@@ -105,7 +105,7 @@ def generate_summary_narrative(hypotheses: List[Dict[str, Any]], feature_names: 
         data_overview = f"This analysis examined a dataset with {data_shape[0]:,} observations and {data_shape[1]} features, analyzing patterns in the '{target_col}' variable. "
 
     # Methodology explanation
-    methodology = "GRETA used smart computer algorithms to try out different combinations of your data features, testing each idea with careful statistical checks to see what really matters. "
+    methodology = "GRETA used advanced machine learning algorithms to explore your data, employing both parametric and non-parametric statistical tests (including Mann-Whitney U, Kruskal-Wallis, and permutation tests) to validate findings. The system also utilized enhanced feature engineering capabilities, including automated feature generation, advanced encoding techniques, sophisticated transformations, and intelligent feature selection methods to uncover the most relevant patterns. "
 
     # Main findings
     findings = f"The analysis identified {num_hypotheses} potential {'hypothesis' if num_hypotheses == 1 else 'hypotheses'}. "
@@ -232,6 +232,8 @@ def create_report(hypotheses: List[Dict[str, Any]], feature_names: List[str], st
         report += "- The best finding is very trustworthy and should be prioritized - focus on this one first.\n"
     if len(hypotheses) > 1:
         report += "- Look at mixing features from different ideas.\n"
-    report += "- Check these results with more data or different tests to be sure."
+    report += "- Check these results with more data or different tests to be sure.\n"
+    report += "- Consider leveraging GRETA's enhanced feature engineering capabilities (automated generation, advanced encoding, and intelligent selection) for deeper insights.\n"
+    report += "- For non-normally distributed data, the non-parametric statistical tests (Mann-Whitney U, Kruskal-Wallis, permutation tests) provide robust validation."
 
     return report

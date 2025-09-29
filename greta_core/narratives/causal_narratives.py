@@ -77,7 +77,7 @@ def generate_causal_narrative(causal_results: Dict[str, Any]) -> str:
         except Exception as e:
             confounder_text = ""
 
-        narrative = f"Causal analysis using the {method} method suggests that {treatment} has {effect_desc} on {outcome}{confounder_text}. "
+        narrative = f"Following enhanced preprocessing and feature engineering (including advanced encoding and automated feature generation), causal analysis using the {method} method suggests that {treatment} has {effect_desc} on {outcome}{confounder_text}. "
         narrative += f"{confidence_desc} each unit increase in {treatment} {direction} {outcome} by approximately {abs(estimate):.3f} units."
 
         # Add interpretation

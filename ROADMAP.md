@@ -82,6 +82,11 @@ This document outlines the complete phased development roadmap for Project Greta
 - [x] Fix CLI integration issues and ensure robust error handling.
 - [x] Update documentation and guides for CLI usage.
 - [x] Implement causal analysis integration with DoWhy framework.
+- [x] Add non-parametric statistical tests (Mann-Whitney U, Kruskal-Wallis, permutation tests).
+- [x] Enhance feature engineering with automated generation, advanced encoding, and Dask support.
+- [x] Implement comprehensive logging system with file handlers and performance monitoring.
+- [x] Update narrative generation with enhanced explanations and causal insights.
+- [x] Expand testing suite with comprehensive coverage for new features.
 
 ## Phase 4: Enterprise Readiness & Scalability
 **Goal:** Shift focus to performance and collaboration by re-architecting for big data and adding team management features.
@@ -104,6 +109,12 @@ This document outlines the complete phased development roadmap for Project Greta
 - [ ] Optimize performance for enterprise-scale data.
 - [ ] Enhance security and access controls.
 
+**Advanced Analysis Enhancements:**
+- [ ] Improve hypothesis search with multi-objective genetic algorithms and dynamic fitness adaptation.
+- [ ] Enhance statistical and regression analysis with support for machine learning models and cross-validation.
+- [ ] Expand causal analysis capabilities with advanced estimators and sensitivity analysis.
+- [ ] Add new features including anomaly detection algorithms and clustering methods for unsupervised insights.
+
 ## Phase 5: Maturity & Community
 **Goal:** Transform the project into a true platform with extensibility, tutorials, and advanced R&D.
 
@@ -124,3 +135,7 @@ This document outlines the complete phased development roadmap for Project Greta
 - [ ] Begin R&D on Bayesian inference and causal discovery.
 - [ ] Build community engagement features (forums, contributions).
 - [ ] Establish platform maturity with automated testing and CI/CD.
+
+---
+
+*Last updated: 2025-09-29*

@@ -1,0 +1,29 @@
+data:
+  source: data/churn.csv
+  type: csv
+  target_column: null
+  sheet_name: null
+preprocessing:
+  missing_strategy: mean
+  outlier_method: iqr
+  outlier_threshold: 1.5
+  normalize_types: true
+  feature_engineering: true
+  encoding_method: auto
+  max_cardinality: 20
+  numeric_transforms:
+  - polynomial
+  - trigonometric
+  - logarithmic
+  max_interactions: 5
+  feature_selection: false
+  selection_method: mutual_info
+  max_features: 50
+hypothesis_search:
+  pop_size: 100
+  num_generations: 50
+  cx_prob: 0.7
+  mut_prob: 0.2
+output:
+  format: json
+  file: null

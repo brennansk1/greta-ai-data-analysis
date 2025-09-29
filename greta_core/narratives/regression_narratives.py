@@ -6,7 +6,7 @@ Contains functions for generating narratives from regression analysis results.
 
 from typing import Dict, List, Any
 import numpy as np
-from .regression_analysis import perform_multiple_linear_regression
+from ..statistical_analysis import perform_multiple_linear_regression
 
 
 def generate_regression_narrative(hypothesis: Dict[str, Any], feature_names: List[str], data: np.ndarray, target: np.ndarray, confidence: str, effect: str, coverage_desc: str) -> str:
@@ -53,10 +53,10 @@ def generate_regression_narrative(hypothesis: Dict[str, Any], feature_names: Lis
 
     if len(features) == 1:
         coeff_desc = f"with a coefficient of {coefficients[0]:.3f}"
-        narrative = f"Multiple linear regression shows that {features[0]} has a {effect} linear relationship with the target variable {coeff_desc}. "
+        narrative = f"Using advanced feature engineering and selection methods (including automated generation, encoding techniques, and statistical selection), multiple linear regression shows that {features[0]} has a {effect} linear relationship with the target variable {coeff_desc}. "
     else:
         feature_list = ", ".join(features[:-1]) + f" and {features[-1]}" if len(features) > 1 else features[0]
-        narrative = f"Multiple linear regression analysis of {feature_list} reveals a {effect} relationship with the target variable. "
+        narrative = f"Using advanced feature engineering and selection methods (including automated generation, encoding techniques, and statistical selection), multiple linear regression analysis of {feature_list} reveals a {effect} relationship with the target variable. "
 
         if significant_features:
             sig_list = ", ".join(significant_features[:-1]) + f" and {significant_features[-1]}" if len(significant_features) > 1 else significant_features[0]

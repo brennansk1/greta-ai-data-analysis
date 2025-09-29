@@ -24,13 +24,13 @@ The landing page introduces Greta, explains its purpose, and allows users to sta
 Provides a drag-and-drop interface for uploading data files (CSV, Excel, Parquet) or connecting to databases. Includes file validation, preview of data structure, and initial ingestion via greta_core.ingestion.
 
 ### Data Health Dashboard
-Displays a visual summary of data quality, including missing values, data types, outliers, and distribution plots. Offers interactive cleaning suggestions (e.g., imputation options) powered by greta_core.preprocessing, with real-time updates to data health metrics.
+Displays a comprehensive visual summary of data quality, including missing values, data types, outliers, and distribution plots. Offers interactive cleaning suggestions and advanced preprocessing options powered by greta_core.preprocessing, including automated feature engineering previews, encoding method selection, and real-time updates to data health metrics with enhanced feature engineering capabilities.
 
 ### Analysis Dashboard
-Allows users to select a target variable, configure analysis parameters (e.g., population size for genetic algorithm), and initiate the "Find Insights" process. Integrates with greta_core.hypothesis_search and greta_core.statistical_analysis for background processing.
+Allows users to select a target variable, configure comprehensive analysis parameters (including genetic algorithm settings, statistical test preferences, feature engineering options, and encoding methods), and initiate the enhanced "Find Insights" process. Integrates with greta_core.hypothesis_search, greta_core.statistical_analysis (including non-parametric tests), and advanced preprocessing for comprehensive background processing with real-time progress updates.
 
 ### Results Page
-Presents ranked findings from the analysis, with expandable details on each hypothesis. Includes narrative summaries from greta_core.narrative_generation, statistical metrics, and interactive visualizations of results.
+Presents ranked findings from the comprehensive analysis, with expandable details on each hypothesis including causal analysis insights. Includes enhanced narrative summaries from greta_core.narrative_generation with references to preprocessing and feature engineering, detailed statistical metrics (including non-parametric test results), and interactive visualizations of results with PDF export capabilities.
 
 ## User Flow
 
@@ -52,11 +52,11 @@ Users progress step-by-step, with visual cues and tooltips to guide decisions. T
 
 ## Data Flow and State Management
 
-Data flows through the app in alignment with the greta_core pipeline:
+Data flows through the app in alignment with the enhanced greta_core pipeline:
 
 1. **Ingestion**: User-uploaded data is loaded via greta_core.ingestion and stored in st.session_state['raw_data'].
-2. **Preprocessing**: Data health actions update st.session_state['cleaned_data'] using greta_core.preprocessing.
-3. **Analysis**: Hypothesis search and statistical analysis populate st.session_state['results'] with findings and narratives.
+2. **Enhanced Preprocessing**: Data health actions and feature engineering update st.session_state['cleaned_data'] using greta_core.preprocessing with automated feature generation and advanced encoding.
+3. **Comprehensive Analysis**: Hypothesis search with genetic algorithms, statistical analysis (including non-parametric tests), and causal analysis populate st.session_state['results'] with enhanced findings and narratives.
 4. **Persistence**: st.session_state maintains data across pages, enabling seamless navigation without reprocessing.
 
 State management uses Streamlit's session state for user data, progress flags, and results, ensuring data persists during the session while allowing resets for new projects.

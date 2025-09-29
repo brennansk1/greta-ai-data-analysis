@@ -10,7 +10,7 @@ __version__ = "0.1.0"
 from . import ingestion
 from . import preprocessing
 from . import statistical_analysis
-from . import narrative_generation
+from . import narratives
 
 try:
     from . import hypothesis_search
@@ -24,7 +24,7 @@ __all__ = [
     "ingestion",
     "preprocessing",
     "statistical_analysis",
-    "narrative_generation",
+    "narratives",
 ]
 
 if _has_deap:

@@ -3,7 +3,7 @@ Comprehensive tests for narrative_generation module using pytest.
 """
 
 import pytest
-from greta_core.summary_narratives import (
+from greta_core.narratives.summary_narratives import (
     generate_hypothesis_narrative, generate_summary_narrative,
     generate_insight_narrative, create_report
 )
@@ -15,7 +15,7 @@ class TestGenerateHypothesisNarrative:
     def test_generate_hypothesis_narrative_single_feature(self, sample_hypotheses, feature_names):
         """Test narrative generation for single feature hypothesis."""
         hypothesis = {
-            'features': [0],
+            'features': ['age'],
             'significance': 0.9,
             'effect_size': 0.7,
             'coverage': 0.8,
@@ -45,7 +45,7 @@ class TestGenerateHypothesisNarrative:
     def test_generate_hypothesis_narrative_weak_relationship(self):
         """Test narrative with weak statistical relationship."""
         hypothesis = {
-            'features': [1],
+            'features': ['B'],
             'significance': 0.6,
             'effect_size': 0.2,
             'coverage': 0.3,
@@ -62,7 +62,7 @@ class TestGenerateHypothesisNarrative:
     def test_generate_hypothesis_narrative_perfect_significance(self):
         """Test narrative with perfect significance."""
         hypothesis = {
-            'features': [0],
+            'features': ['Perfect'],
             'significance': 1.0,
             'effect_size': 0.9,
             'coverage': 0.95,
@@ -108,7 +108,7 @@ class TestGenerateSummaryNarrative:
     def test_generate_summary_narrative_single_hypothesis(self, feature_names):
         """Test summary generation with single hypothesis."""
         hypotheses = [{
-            'features': [0],
+            'features': ['age'],
             'significance': 0.8,
             'effect_size': 0.6,
             'coverage': 0.7,
@@ -133,7 +133,7 @@ class TestGenerateSummaryNarrative:
         """Test summary includes average statistics."""
         hypotheses = [
             {
-                'features': [0],
+                'features': ['age'],
                 'significance': 0.9,
                 'effect_size': 0.8,
                 'coverage': 0.7,
@@ -141,7 +141,7 @@ class TestGenerateSummaryNarrative:
                 'fitness': 2.2
             },
             {
-                'features': [1],
+                'features': ['income'],
                 'significance': 0.7,
                 'effect_size': 0.4,
                 'coverage': 0.5,
@@ -165,7 +165,7 @@ class TestGenerateInsightNarrative:
         stat_results = {'p_value': 0.01, 'r_squared': 0.75}
         hypothesis = {
             'effect_size': 0.6,
-            'features': [0, 1],
+            'features': ['A', 'B'],
             'significance': 0.9
         }
 
@@ -181,7 +181,7 @@ class TestGenerateInsightNarrative:
         stat_results = {'p_value': 0.15, 'r_squared': 0.3}
         hypothesis = {
             'effect_size': 0.2,
-            'features': [0],
+            'features': ['A'],
             'significance': 0.4
         }
 
@@ -195,7 +195,7 @@ class TestGenerateInsightNarrative:
         stat_results = {'p_value': 0.08, 'r_squared': 0.5}
         hypothesis = {
             'effect_size': 0.4,
-            'features': [0],
+            'features': ['A'],
             'significance': 0.6
         }
 
@@ -208,7 +208,7 @@ class TestGenerateInsightNarrative:
         stat_results = {'p_value': 0.02, 'r_squared': 0.8}
         hypothesis = {
             'effect_size': 0.7,
-            'features': [0],
+            'features': ['A'],
             'significance': 0.8
         }
 
@@ -258,7 +258,7 @@ class TestCreateReport:
     def test_create_report_high_confidence(self, feature_names):
         """Test report with high confidence hypothesis."""
         hypotheses = [{
-            'features': [0],
+            'features': ['age'],
             'significance': 0.98,
             'effect_size': 0.8,
             'coverage': 0.9,
@@ -310,6 +310,6 @@ class TestNarrativeGenerationIntegration:
             assert len(narrative) > 20  # Reasonable length
 
             # Should contain feature names
-            feature_names_in_hyp = [feature_names[i] for i in hyp['features']]
+            feature_names_in_hyp = hyp['features']
             for fname in feature_names_in_hyp:
                 assert fname in narrative

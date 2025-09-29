@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from greta_core.data_profiling import profile_data, normalize_data_types
-from greta_core.missing_value_handling import handle_missing_values
-from greta_core.outlier_detection import detect_outliers, remove_outliers
+from greta_core.preprocessing.profiling_stats import profile_data
+from greta_core.preprocessing.data_normalization import normalize_data_types
+from greta_core.preprocessing.missing_value_handling import handle_missing_values
+from greta_core.preprocessing.outlier_detection import detect_outliers, remove_outliers
 
 def show():
     st.title("🏥 Data Health Dashboard")

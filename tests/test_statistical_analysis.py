@@ -6,9 +6,9 @@ import pytest
 import numpy as np
 import pandas as pd
 from unittest.mock import patch
-from greta_core.significance_tests import (
-    perform_t_test, perform_anova, calculate_significance,
-    calculate_effect_size, calculate_coverage, calculate_parsimony,
+from greta_core.statistical_analysis.tests.significance_tests import (
+    perform_t_test, perform_anova, perform_mann_whitney, perform_kruskal_wallis, perform_permutation_test,
+    calculate_significance, calculate_effect_size, calculate_coverage, calculate_parsimony,
     perform_statistical_test, get_target_type
 )
 
@@ -108,6 +108,186 @@ class TestPerformAnova:
 
     def test_perform_anova_single_group(self):
         """Test ANOVA with single group."""
+
+
+class TestPerformMannWhitney:
+    """Test Mann-Whitney U test functionality."""
+
+    def test_perform_mann_whitney_basic(self):
+        """Test basic Mann-Whitney U test between two groups."""
+        group1 = np.array([1, 2, 3, 4, 5])
+        group2 = np.array([2, 3, 4, 5, 6])
+
+        u_stat, p_value = perform_mann_whitney(group1, group2)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+        assert 0 <= p_value <= 1
+
+    def test_perform_mann_whitney_different_medians(self):
+        """Test Mann-Whitney U test with clearly different groups."""
+        group1 = np.array([1, 2, 3, 4, 5])
+        group2 = np.array([10, 11, 12, 13, 14])
+
+        u_stat, p_value = perform_mann_whitney(group1, group2)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+        assert p_value < 0.05  # Should be significant
+
+    def test_perform_mann_whitney_identical_groups(self):
+        """Test Mann-Whitney U test with identical groups."""
+        group1 = np.array([1, 2, 3])
+        group2 = np.array([1, 2, 3])
+
+        u_stat, p_value = perform_mann_whitney(group1, group2)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+        assert p_value == 1.0  # No difference
+
+    def test_perform_mann_whitney_single_value_groups(self):
+        """Test Mann-Whitney U test with single values."""
+        group1 = np.array([5])
+        group2 = np.array([10])
+
+        u_stat, p_value = perform_mann_whitney(group1, group2)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+
+    @pytest.mark.parametrize("group1,group2", [
+        ([], [1, 2, 3]),
+        ([1, 2, 3], []),
+        ([], [])
+    ])
+    def test_perform_mann_whitney_edge_cases(self, group1, group2):
+        """Test Mann-Whitney U test with edge cases."""
+        with pytest.raises(ValueError, match="Groups must have at least one element"):
+            perform_mann_whitney(np.array(group1), np.array(group2))
+
+
+class TestPerformKruskalWallis:
+    """Test Kruskal-Wallis H test functionality."""
+
+    def test_perform_kruskal_wallis_basic(self):
+        """Test basic Kruskal-Wallis H test with three groups."""
+        group1 = np.array([1, 2, 3])
+        group2 = np.array([4, 5, 6])
+        group3 = np.array([7, 8, 9])
+
+        h_stat, p_value = perform_kruskal_wallis(group1, group2, group3)
+
+        assert isinstance(h_stat, float)
+        assert isinstance(p_value, float)
+        assert h_stat > 0
+        assert 0 <= p_value <= 1
+
+    def test_perform_kruskal_wallis_two_groups(self):
+        """Test Kruskal-Wallis H test with only two groups."""
+        group1 = np.array([1, 2, 3])
+        group2 = np.array([4, 5, 6])
+
+        h_stat, p_value = perform_kruskal_wallis(group1, group2)
+
+        assert isinstance(h_stat, float)
+        assert isinstance(p_value, float)
+
+    def test_perform_kruskal_wallis_identical_groups(self):
+        """Test Kruskal-Wallis H test with identical groups."""
+        group1 = np.array([5, 5, 5])
+        group2 = np.array([5, 5, 5])
+        group3 = np.array([5, 5, 5])
+
+        h_stat, p_value = perform_kruskal_wallis(group1, group2, group3)
+
+        assert h_stat == 0.0
+        assert p_value == 1.0
+
+    def test_perform_kruskal_wallis_single_group(self):
+        """Test Kruskal-Wallis H test with single group."""
+        group1 = np.array([1, 2, 3])
+
+        h_stat, p_value = perform_kruskal_wallis(group1)
+
+        assert isinstance(h_stat, float)
+        assert isinstance(p_value, float)
+
+    def test_perform_kruskal_wallis_empty_groups(self):
+        """Test Kruskal-Wallis H test with empty groups."""
+        h_stat, p_value = perform_kruskal_wallis()
+
+        assert h_stat == 0.0
+        assert p_value == 1.0
+
+
+class TestPerformPermutationTest:
+    """Test permutation test functionality."""
+
+    def test_perform_permutation_test_basic(self):
+        """Test basic permutation test between two groups."""
+        group1 = np.array([1, 2, 3, 4, 5])
+        group2 = np.array([2, 3, 4, 5, 6])
+
+        u_stat, p_value = perform_permutation_test(group1, group2, n_permutations=100)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+        assert 0 <= p_value <= 1
+
+    def test_perform_permutation_test_different_groups(self):
+        """Test permutation test with clearly different groups."""
+        group1 = np.array([1, 2, 3, 4, 5])
+        group2 = np.array([10, 11, 12, 13, 14])
+
+        u_stat, p_value = perform_permutation_test(group1, group2, n_permutations=1000)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+        assert 0 <= p_value <= 1
+
+    def test_perform_permutation_test_identical_groups(self):
+        """Test permutation test with identical groups."""
+        group1 = np.array([1, 2, 3])
+        group2 = np.array([1, 2, 3])
+
+        u_stat, p_value = perform_permutation_test(group1, group2, n_permutations=100)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+        assert p_value >= 0.05  # Not significant
+
+    def test_perform_permutation_test_single_value_groups(self):
+        """Test permutation test with single values."""
+        group1 = np.array([5])
+        group2 = np.array([10])
+
+        u_stat, p_value = perform_permutation_test(group1, group2, n_permutations=50)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+
+    @pytest.mark.parametrize("group1,group2", [
+        ([], [1, 2, 3]),
+        ([1, 2, 3], []),
+        ([], [])
+    ])
+    def test_perform_permutation_test_edge_cases(self, group1, group2):
+        """Test permutation test with edge cases."""
+        with pytest.raises(ValueError, match="Groups must have at least one element"):
+            perform_permutation_test(np.array(group1), np.array(group2))
+
+    def test_perform_permutation_test_custom_permutations(self):
+        """Test permutation test with custom number of permutations."""
+        group1 = np.array([1, 2])
+        group2 = np.array([3, 4])
+
+        u_stat, p_value = perform_permutation_test(group1, group2, n_permutations=10)
+
+        assert isinstance(u_stat, float)
+        assert isinstance(p_value, float)
+
+
 class TestGetTargetType:
     """Test get_target_type functionality."""
 
@@ -475,6 +655,72 @@ class TestPerformStatisticalTest:
         y = np.array([0, 1, 0])
 
         result = perform_statistical_test(X, y, test_type='t_test')
+
+        assert result['test'] == 'logistic'
+        assert 'accuracy' in result
+
+    def test_perform_statistical_test_mann_whitney(self):
+        """Test statistical test with Mann-Whitney U test."""
+        X = np.array([[1], [2], [3], [4]])
+        y = np.array([0, 1, 0, 1])
+
+        result = perform_statistical_test(X, y, test_type='mann_whitney')
+
+        assert 'test' in result
+        assert result['test'] == 'mann_whitney'
+        assert 'u_stat' in result
+        assert 'p_value' in result
+
+    def test_perform_statistical_test_kruskal_wallis(self):
+        """Test statistical test with Kruskal-Wallis H test."""
+        X = np.array([[1], [2], [3], [4], [5]])
+        y = np.array([0, 1, 2, 1, 0])
+
+        result = perform_statistical_test(X, y, test_type='kruskal_wallis')
+
+        assert 'test' in result
+        assert result['test'] == 'kruskal_wallis'
+        assert 'h_stat' in result
+        assert 'p_value' in result
+
+    def test_perform_statistical_test_permutation(self):
+        """Test statistical test with permutation test."""
+        X = np.array([[1], [2], [3], [4]])
+        y = np.array([0, 1, 0, 1])
+
+        result = perform_statistical_test(X, y, test_type='permutation')
+
+        assert 'test' in result
+        assert result['test'] == 'permutation'
+        assert 'u_stat' in result
+        assert 'p_value' in result
+
+    def test_perform_statistical_test_mann_whitney_logistic_fallback(self):
+        """Test Mann-Whitney with multiple features falls back to logistic."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        y = np.array([0, 1, 0])
+
+        result = perform_statistical_test(X, y, test_type='mann_whitney')
+
+        assert result['test'] == 'logistic'
+        assert 'accuracy' in result
+
+    def test_perform_statistical_test_kruskal_wallis_logistic_fallback(self):
+        """Test Kruskal-Wallis with multiple features falls back to logistic."""
+        X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        y = np.array([0, 1, 2, 1])
+
+        result = perform_statistical_test(X, y, test_type='kruskal_wallis')
+
+        assert result['test'] == 'logistic'
+        assert 'accuracy' in result
+
+    def test_perform_statistical_test_permutation_logistic_fallback(self):
+        """Test permutation test with multiple features falls back to logistic."""
+        X = np.array([[1, 2], [3, 4], [5, 6]])
+        y = np.array([0, 1, 0])
+
+        result = perform_statistical_test(X, y, test_type='permutation')
 
         assert result['test'] == 'logistic'
         assert 'accuracy' in result

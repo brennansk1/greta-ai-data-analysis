@@ -118,33 +118,12 @@ class TestEvaluateHypothesis:
 class TestRunGeneticAlgorithm:
     """Test genetic algorithm execution."""
 
-    @patch('greta_core.hypothesis_search.create_toolbox')
-    @patch('random.random')
-    def test_run_genetic_algorithm_basic(self, mock_random, mock_create_toolbox):
+    @patch('greta_core.hypothesis_search.GeneticAlgorithmOptimizer')
+    def test_run_genetic_algorithm_basic(self, mock_optimizer_class):
         """Test basic GA execution."""
-        # Mock toolbox
-        mock_toolbox = Mock()
-        mock_toolbox.population.return_value = [Mock() for _ in range(10)]
-        mock_toolbox.select.return_value = [Mock() for _ in range(10)]
-        mock_toolbox.clone.return_value = Mock()
-        mock_toolbox.mate.return_value = None
-        mock_toolbox.mutate.return_value = None
-        mock_toolbox.map.return_value = [(0.8, 0.6, 0.7, 0.2) for _ in range(10)]
-        mock_chromosome_info = {'total_length': 5}  # Mock chromosome info
-        mock_create_toolbox.return_value = (mock_toolbox, mock_chromosome_info)
-
-        # Mock random for crossover/mutation
-        mock_random.side_effect = [0.5, 0.8] * 15  # Alternate below/above thresholds
-
-        # Mock individuals with fitness
-        individuals = []
-        for i in range(10):
-            ind = Mock()
-            ind.fitness = Mock()
-            individuals.append(ind)
-
-        mock_toolbox.population.return_value = individuals
-        mock_toolbox.select.return_value = individuals
+        mock_optimizer = Mock()
+        mock_optimizer.optimize.return_value = [Mock()]
+        mock_optimizer_class.return_value = mock_optimizer
 
         data = np.random.randn(20, 5)
         target = np.random.randint(0, 2, 20)
@@ -153,30 +132,15 @@ class TestRunGeneticAlgorithm:
 
         assert isinstance(result, list)
         assert len(result) > 0
-        mock_create_toolbox.assert_called_with(5)
+        mock_optimizer_class.assert_called_once()
+        mock_optimizer.optimize.assert_called_once()
 
-    @patch('greta_core.hypothesis_search.create_toolbox')
-    def test_run_genetic_algorithm_parameters(self, mock_create_toolbox):
+    @patch('greta_core.hypothesis_search.GeneticAlgorithmOptimizer')
+    def test_run_genetic_algorithm_parameters(self, mock_optimizer_class):
         """Test GA with different parameters."""
-        mock_toolbox = Mock()
-        mock_toolbox.population.return_value = [Mock() for _ in range(5)]
-        mock_toolbox.select.return_value = [Mock() for _ in range(5)]
-        mock_toolbox.clone.return_value = Mock()
-        mock_toolbox.mate.return_value = None
-        mock_toolbox.mutate.return_value = None
-        mock_toolbox.map.return_value = [(0.9, 0.8, 0.85, 0.1) for _ in range(5)]
-        mock_chromosome_info = {'total_length': 3}
-        mock_create_toolbox.return_value = (mock_toolbox, mock_chromosome_info)
-
-        # Set up individuals
-        individuals = []
-        for i in range(5):
-            ind = Mock()
-            ind.fitness = Mock()
-            individuals.append(ind)
-
-        mock_toolbox.population.return_value = individuals
-        mock_toolbox.select.return_value = individuals
+        mock_optimizer = Mock()
+        mock_optimizer.optimize.return_value = [Mock()]
+        mock_optimizer_class.return_value = mock_optimizer
 
         data = np.random.randn(15, 3)
         target = np.random.randint(0, 2, 15)
@@ -190,35 +154,29 @@ class TestRunGeneticAlgorithm:
         )
 
         assert isinstance(result, list)
+        # Check that optimizer was called with correct parameters
+        call_args = mock_optimizer_class.call_args
+        assert call_args[0] == (data, target)
+        kwargs = call_args[1]
+        assert kwargs['pop_size'] == 5
+        assert kwargs['num_generations'] == 1
+        assert kwargs['cx_prob'] == 0.8
+        assert kwargs['mut_prob'] == 0.1
 
-    @patch('deap.tools.sortNondominated')
-    def test_run_genetic_algorithm_pareto_front(self, mock_sort):
+    @patch('greta_core.hypothesis_search.GeneticAlgorithmOptimizer')
+    def test_run_genetic_algorithm_pareto_front(self, mock_optimizer_class):
         """Test that GA returns Pareto front."""
-        mock_sort.return_value = ([Mock()], 1)
+        mock_optimizer = Mock()
+        mock_optimizer.optimize.return_value = [Mock()]
+        mock_optimizer_class.return_value = mock_optimizer
 
-        with patch('greta_core.hypothesis_search.create_toolbox') as mock_create:
-            mock_toolbox = Mock()
-            mock_toolbox.population.return_value = [Mock()]
-            mock_toolbox.select.return_value = [Mock()]
-            mock_toolbox.clone.return_value = Mock()
-            mock_toolbox.mate.return_value = None
-            mock_toolbox.mutate.return_value = None
-            mock_toolbox.map.return_value = [(0.8, 0.6, 0.7, 0.2)]
-            mock_chromosome_info = {'total_length': 2}
-            mock_create.return_value = (mock_toolbox, mock_chromosome_info)
+        data = np.random.randn(10, 2)
+        target = np.random.randint(0, 2, 10)
 
-            # Set up individual
-            ind = Mock()
-            ind.fitness = Mock()
-            mock_toolbox.population.return_value = [ind]
-            mock_toolbox.select.return_value = [ind]
+        result = run_genetic_algorithm(data, target, pop_size=1, num_generations=1)
 
-            data = np.random.randn(10, 2)
-            target = np.random.randint(0, 2, 10)
-
-            result = run_genetic_algorithm(data, target, pop_size=1, num_generations=1)
-
-            mock_sort.assert_called_once()
+        assert isinstance(result, list)
+        assert len(result) == 1
 
 
 class TestGenerateHypotheses:
@@ -317,7 +275,11 @@ class TestGenerateHypotheses:
             use_dask=False,
             adaptive_params=False,
             diversity_threshold=0.1,
-            convergence_threshold=0.01
+            convergence_threshold=0.01,
+            local_search_enabled=False,
+            local_search_method='hill_climbing',
+            elite_fraction=0.1,
+            local_search_iterations=10
         )
 
     @patch('greta_core.hypothesis_search.run_genetic_algorithm')

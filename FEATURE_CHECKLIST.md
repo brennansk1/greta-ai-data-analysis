@@ -1,5 +1,44 @@
 # GRETA Feature Implementation Checklist
 
+## Recently Completed Enhancements (Phase 3+)
+- [x] **Non-parametric Statistical Tests**
+  - [x] Implement Mann-Whitney U test for non-parametric comparisons
+  - [x] Add Kruskal-Wallis H test for multiple group comparisons
+  - [x] Create permutation test for robust p-value estimation
+  - [x] Integrate non-parametric tests into statistical analysis pipeline
+
+- [x] **Enhanced Feature Engineering**
+  - [x] Implement automated polynomial feature generation
+  - [x] Add trigonometric feature transformations
+  - [x] Create logarithmic and binning feature engineering
+  - [x] Develop interaction feature generation
+  - [x] Add advanced categorical encoding (one-hot, label, ordinal, frequency, target-mean)
+  - [x] Integrate Dask support for large dataset processing
+
+- [x] **CLI Logging Improvements**
+  - [x] Implement comprehensive logging with file handlers
+  - [x] Add performance timing and monitoring
+  - [x] Create structured logging with configurable levels
+  - [x] Add error handling with informative messages
+
+- [x] **Enhanced Narrative Generation**
+  - [x] Update narratives to reference preprocessing and feature engineering
+  - [x] Add causal analysis integration in narratives
+  - [x] Improve plain-English explanations with technical details
+  - [x] Create summary narratives with methodology explanations
+
+- [x] **PDF Report Generation**
+  - [x] Implement comprehensive PDF reports with ReportLab
+  - [x] Add charts, tables, and business insights to reports
+  - [x] Create automated report generation from analysis results
+  - [x] Integrate PDF export functionality
+
+- [x] **Testing Enhancements**
+  - [x] Expand test coverage for enhanced feature engineering
+  - [x] Add comprehensive tests for non-parametric statistical methods
+  - [x] Implement integration tests for CLI functionality
+  - [x] Create performance and regression testing framework
+
 ## Phase 4: Enterprise Readiness & Scalability
 
 ### Scalable Backend Infrastructure
@@ -190,5 +229,6 @@
 
 ---
 
-*Last updated: 2025-09-27*
+*Last updated: 2025-09-29*
+*Total completed features: 25+ recent enhancements*
 *Total pending features: 85+ items across enterprise scalability, community maturity, and advanced analytics*

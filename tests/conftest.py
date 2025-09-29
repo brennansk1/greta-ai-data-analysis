@@ -91,7 +91,7 @@ def sample_hypotheses():
     """Sample hypotheses for testing narrative generation."""
     return [
         {
-            'features': [0, 2],
+            'features': ['age', 'education'],
             'significance': 0.95,
             'effect_size': 0.8,
             'coverage': 0.85,
@@ -99,7 +99,7 @@ def sample_hypotheses():
             'fitness': 2.4
         },
         {
-            'features': [1],
+            'features': ['income'],
             'significance': 0.85,
             'effect_size': 0.5,
             'coverage': 0.6,

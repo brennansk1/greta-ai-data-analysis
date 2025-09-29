@@ -21,28 +21,28 @@ This structure promotes separation of concerns, allowing independent development
 Handles loading data from various sources including CSV files, Excel spreadsheets, and database connections. Provides unified data structures (e.g., Pandas DataFrames) for downstream processing, with support for schema detection and basic validation.
 
 ### Automated Preprocessing Module
-Performs data profiling and cleaning operations automatically. Includes functions for handling missing values, outlier detection, data type normalization, and feature engineering. Ensures data quality and prepares datasets for hypothesis generation and statistical testing.
+Performs comprehensive data profiling and cleaning operations automatically. Includes functions for handling missing values, outlier detection, data type normalization, and advanced feature engineering. Features enhanced preprocessing with automated feature generation (polynomial, trigonometric, logarithmic, interaction terms), multiple categorical encoding methods (one-hot, label, ordinal, frequency, target-mean), and Dask support for large datasets. Ensures data quality and prepares datasets for hypothesis generation and statistical testing.
 
 ### Hypothesis Search Module
 Implements the genetic algorithm for exploring potential relationships and patterns in data. Generates candidate hypotheses through evolutionary optimization, focusing on combinations of variables that may explain target outcomes.
 
 ### Statistical Analysis Module
-Conducts rigorous statistical testing on generated hypotheses. Supports basic tests such as t-tests and ANOVA for Phase 1, with extensible design for future additions like regression analysis.
+Conducts comprehensive statistical testing on generated hypotheses. Supports both parametric tests (t-tests, ANOVA, regression) and non-parametric tests (Mann-Whitney U, Kruskal-Wallis H, permutation tests) for robust statistical validation. Includes significance testing, effect size calculation, coverage analysis, and parsimony evaluation with automatic test selection based on data characteristics.
 
 ### Narrative Generation Module
-Translates statistical results into plain-English insights and explanations. Creates human-readable summaries of findings, including confidence levels and practical implications.
+Translates statistical results into enhanced plain-English insights and explanations. Creates human-readable summaries of findings with causal analysis integration, confidence levels, practical implications, and references to preprocessing and feature engineering enhancements. Supports multiple narrative types including summary narratives, causal narratives, and hypothesis-specific explanations.
 
 ## Data Flow
 
-The core data flow through the Greta Core Engine follows a sequential pipeline:
+The core data flow through the Greta Core Engine follows an enhanced sequential pipeline:
 
 ```mermaid
 graph TD
-    A[Data Ingestion: Load and validate input data] --> B[Preprocessing: Profile and clean data]
-    B --> C[Hypothesis Search: Generate candidate hypotheses via genetic algorithm]
-    C --> D[Statistical Analysis: Validate hypotheses with statistical tests]
-    D --> E[Narrative Generation: Create plain-English insights]
-    E --> F[Output: Structured results for reporting]
+     A[Data Ingestion: Load and validate input data] --> B[Enhanced Preprocessing: Profile, clean, and engineer features]
+     B --> C[Hypothesis Search: Generate candidate hypotheses via genetic algorithm with parallel execution]
+     C --> D[Comprehensive Statistical Analysis: Parametric and non-parametric validation]
+     D --> E[Enhanced Narrative Generation: Plain-English insights with causal analysis]
+     E --> F[Output: Structured results for reporting and PDF generation]
 ```
 
 Data enters through ingestion, undergoes quality improvements in preprocessing, is analyzed for patterns in hypothesis search, receives statistical validation, and finally gets interpreted into narratives for user consumption.
@@ -50,9 +50,12 @@ Data enters through ingestion, undergoes quality improvements in preprocessing, 
 ## Technology Choices
 
 - **Pandas**: Primary data manipulation library for handling structured data, providing efficient DataFrame operations and integration with other scientific libraries.
-- **SciPy**: Statistical computing library for hypothesis testing, probability distributions, and mathematical functions supporting the analysis module.
-- **DEAP (Distributed Evolutionary Algorithms in Python)**: Framework for implementing genetic algorithms, offering flexible evolutionary computation tools for hypothesis search.
+- **Dask**: Parallel computing library for handling large datasets with distributed processing capabilities.
+- **SciPy**: Statistical computing library for hypothesis testing, probability distributions, and mathematical functions supporting comprehensive statistical analysis including non-parametric tests.
+- **DEAP (Distributed Evolutionary Algorithms in Python)**: Framework for implementing genetic algorithms, offering flexible evolutionary computation tools for hypothesis search with parallel execution.
 - **NumPy**: Fundamental package for array computing, serving as a dependency for Pandas and SciPy operations.
+- **ReportLab**: PDF generation library for creating comprehensive reports with charts and tables.
+- **DoWhy**: Causal inference library for advanced causal analysis and relationship validation.
 - **Python 3.8+**: Base language for type safety, extensive scientific ecosystem, and alignment with modern development practices.
 
 These choices prioritize performance, reliability, and community support in the data science domain.
@@ -78,6 +81,6 @@ The overall fitness combines these components through weighted aggregation, allo
 Each analytical component operates as an independent module with well-defined inputs and outputs. This allows isolated development, testing, and maintenance, enabling parallel work on different engine aspects without cascading changes.
 
 ### Extensibility
-The architecture employs abstract interfaces and plugin patterns, permitting addition of new data sources, statistical tests, and narrative styles without core modifications. Configuration-driven parameters support customization of algorithms and thresholds for different use cases.
+The architecture employs abstract interfaces and plugin patterns, permitting addition of new data sources, statistical tests (including non-parametric methods), narrative styles, and feature engineering techniques without core modifications. Configuration-driven parameters support customization of algorithms and thresholds for different use cases, with modular design enabling easy integration of new analytical capabilities.
 
 These principles ensure the Greta Core Engine remains adaptable to evolving analytical needs while maintaining stability for Phase 1 MVP deployment.

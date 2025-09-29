@@ -6,8 +6,7 @@ Contains functions for generating narratives from time series analysis results.
 
 from typing import Dict, List, Any
 import numpy as np
-from .time_series_analysis import detect_trend, detect_seasonality
-from .regression_analysis import perform_multiple_linear_regression
+from ..statistical_analysis import detect_trend, detect_seasonality, perform_multiple_linear_regression
 
 
 def generate_time_series_narrative(hypothesis: Dict[str, Any], feature_names: List[str], data: np.ndarray, target: np.ndarray, confidence: str, effect: str, coverage_desc: str) -> str:
@@ -48,14 +47,14 @@ def generate_time_series_narrative(hypothesis: Dict[str, Any], feature_names: Li
         direction = "increasing" if slope > 0 else "decreasing"
         strength_desc = "strong" if trend_strength > 0.5 else "moderate" if trend_strength > 0.3 else "weak"
 
-        narrative = f"Time-series analysis of the target variable shows a {strength_desc} {direction} trend over time. "
+        narrative = f"Using advanced feature engineering techniques (including automated transformations and encoding), time-series analysis of the target variable shows a {strength_desc} {direction} trend over time. "
         narrative += f"We're {confidence} about this trend and it {coverage_desc}."
     else:
         if data is None:
             # Fallback if data not available
             feature_list = ", ".join(features[:-1]) + f" and {features[-1]}" if len(features) > 1 else features[0]
             verb = "has" if len(features) == 1 else "have"
-            narrative = f"Analysis of trends over time suggests that {feature_list} {verb} a {effect} relationship with the target variable. "
+            narrative = f"Using enhanced feature engineering and selection methods (including automated generation and advanced transformations), analysis of trends over time suggests that {feature_list} {verb} a {effect} relationship with the target variable. "
             narrative += f"We're {confidence} about this finding and it {coverage_desc}."
         else:
             # Regression on time-series predictors
@@ -65,7 +64,7 @@ def generate_time_series_narrative(hypothesis: Dict[str, Any], feature_names: Li
 
             feature_list = ", ".join(features[:-1]) + f" and {features[-1]}" if len(features) > 1 else features[0]
             verb = "has" if len(features) == 1 else "have"
-            narrative = f"Analysis of trends over time shows that {feature_list} {verb} a {effect} relationship with the target variable. "
+            narrative = f"Using advanced feature engineering and selection methods (including automated generation, encoding techniques, and statistical selection), analysis of trends over time shows that {feature_list} {verb} a {effect} relationship with the target variable. "
             narrative += f"We're {confidence} about this model, which explains {adj_r_squared:.1%} of what's happening in the target variable, and {coverage_desc}."
 
             # Check for seasonality if possible

@@ -27,6 +27,11 @@ greta-cli run --config config.yml --output results.json
 ```bash
 # Create a human-readable report
 greta-cli report --input-file results.json --format pdf --output analysis_report.pdf
+
+# Generate different report formats
+greta-cli report --input-file results.json --format pdf --output report.pdf
+greta-cli report --input-file results.json --format text
+greta-cli report --input-file results.json --format markdown --output report.md
 ```
 
 ## ✨ Enhanced Feature Selection Pipeline
@@ -34,12 +39,14 @@ greta-cli report --input-file results.json --format pdf --output analysis_report
 GRETA's advanced pipeline includes all the latest upgrades:
 
 - **🔄 Parallel Execution**: Multi-process genetic algorithm optimization
-- **🧮 Dynamic Feature Engineering**: Automatic polynomial and interaction terms
-- **📊 Importance Explainability**: SHAP/permutation importance rankings
+- **🧮 Dynamic Feature Engineering**: Automatic polynomial, trigonometric, logarithmic, and interaction terms
+- **📊 Importance Explainability**: SHAP/permutation importance rankings with consensus analysis
 - **🎯 Stability Selection**: Bootstrap validation for robust features
-- **🔗 Causal Prioritization**: Causal relationship weighting
+- **🔗 Causal Prioritization**: Causal relationship weighting with DoWhy integration
 - **⚙️ Adaptive Parameters**: Dynamic GA parameter tuning
-- **🔄 Multi-modal Handling**: Advanced categorical encoding
+- **🔄 Multi-modal Handling**: Advanced categorical encoding (one-hot, label, ordinal, frequency, target-mean)
+- **📈 Non-parametric Tests**: Mann-Whitney U, Kruskal-Wallis, and permutation tests for robust statistical validation
+- **📋 Automated Feature Generation**: Intelligent feature creation with Dask support for large datasets
 
 ## 📊 Real-World Validation
 
@@ -57,21 +64,23 @@ greta-cli run --config config.yml \
     "bootstrap_iterations": 3,
     "use_causal_prioritization": true,
     "adaptive_params": true,
-    "encoding_method": "target_encoding",
-    "pre_filter_fraction": 0.8
+    "encoding_method": "target_mean",
+    "numeric_transforms": ["polynomial", "trigonometric", "logarithmic"],
+    "max_interactions": 5,
+    "use_nonparametric_tests": true
   }' \
   --output enhanced_results.json
 ```
 
 ### Generate Different Report Formats
 ```bash
-# PDF Report (recommended)
+# PDF Report (recommended) - includes charts, tables, and business insights
 greta-cli report --input-file results.json --format pdf --output report.pdf
 
-# Text Report
+# Text Report - plain text summary
 greta-cli report --input-file results.json --format text
 
-# Markdown Report
+# Markdown Report - formatted markdown with enhanced narratives
 greta-cli report --input-file results.json --format markdown --output report.md
 ```
 
@@ -89,6 +98,9 @@ greta-cli report --input-file results.json --format markdown --output report.md
 - shap (explainability)
 - dowhy (causal inference)
 - fpdf (PDF reports)
+- reportlab (enhanced PDF generation)
+- dask (large dataset support)
+- plotly (interactive visualizations)
 
 ## 🔧 Development
 
@@ -97,10 +109,22 @@ For developers interested in the core library:
 ```python
 import greta_core as gc
 
-# Direct API usage
+# Direct API usage with enhanced features
 df = gc.ingestion.load_csv('data.csv')
 df_clean = gc.preprocessing.handle_missing_values(df)
-hypotheses = gc.hypothesis_search.generate_hypotheses(df_clean, 'target')
+
+# Enhanced feature engineering
+df_engineered, metadata = gc.preprocessing.prepare_features_for_modeling(
+    df_clean, target=df_clean['target'],
+    encoding_method='target_mean',
+    numeric_transforms=['polynomial', 'trigonometric']
+)
+
+# Generate hypotheses with non-parametric validation
+hypotheses = gc.hypothesis_search.generate_hypotheses(df_engineered, 'target')
+
+# Generate enhanced narratives
+narratives = gc.narratives.generate_summary_narrative(hypotheses, df_engineered.columns.tolist())
 ```
 
 ## 📈 Roadmap
@@ -110,7 +134,10 @@ See [ROADMAP.md](ROADMAP.md) for detailed development phases and upcoming featur
 ## 🤝 Contributing
 
 Contributions welcome! Focus areas:
-- Additional statistical tests
-- New data connectors
-- Performance optimizations
-- Plugin architecture
+- Additional statistical tests (parametric and non-parametric)
+- Enhanced feature engineering methods
+- New data connectors and ingestion formats
+- Performance optimizations for large datasets
+- Plugin architecture and extensibility
+- Advanced causal inference methods
+- Improved narrative generation and explainability

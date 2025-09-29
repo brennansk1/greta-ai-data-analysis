@@ -49,6 +49,80 @@ def perform_anova(*groups: np.ndarray) -> Tuple[float, float]:
         return 0.0, 1.0
 
 
+def perform_mann_whitney(group1: np.ndarray, group2: np.ndarray) -> Tuple[float, float]:
+    """
+    Perform Mann-Whitney U test between two groups (non-parametric).
+
+    Args:
+        group1: First group data.
+        group2: Second group data.
+
+    Returns:
+        Tuple of (U-statistic, p-value).
+    """
+    if len(group1) == 0 or len(group2) == 0:
+        raise ValueError("Groups must have at least one element")
+    u_stat, p_value = stats.mannwhitneyu(group1, group2, alternative='two-sided')
+    return u_stat, p_value
+
+
+def perform_kruskal_wallis(*groups: np.ndarray) -> Tuple[float, float]:
+    """
+    Perform Kruskal-Wallis H test on multiple groups (non-parametric).
+
+    Args:
+        *groups: Variable number of group arrays.
+
+    Returns:
+        Tuple of (H-statistic, p-value).
+    """
+    try:
+        h_stat, p_value = stats.kruskal(*groups)
+        if np.isnan(h_stat):
+            h_stat = 0.0
+            p_value = 1.0
+        return h_stat, p_value
+    except:
+        return 0.0, 1.0
+
+
+def perform_permutation_test(group1: np.ndarray, group2: np.ndarray, n_permutations: int = 1000) -> Tuple[float, float]:
+    """
+    Perform permutation test for two groups to estimate p-value robustness.
+
+    Uses Mann-Whitney U as the test statistic.
+
+    Args:
+        group1: First group data.
+        group2: Second group data.
+        n_permutations: Number of permutations.
+
+    Returns:
+        Tuple of (observed_U, permutation_p_value).
+    """
+    if len(group1) == 0 or len(group2) == 0:
+        raise ValueError("Groups must have at least one element")
+
+    combined = np.concatenate([group1, group2])
+    n1, n2 = len(group1), len(group2)
+
+    # Observed statistic
+    observed_u, _ = stats.mannwhitneyu(group1, group2, alternative='two-sided')
+
+    # Permutation
+    count = 0
+    for _ in range(n_permutations):
+        np.random.shuffle(combined)
+        perm_group1 = combined[:n1]
+        perm_group2 = combined[n1:]
+        perm_u, _ = stats.mannwhitneyu(perm_group1, perm_group2, alternative='two-sided')
+        if perm_u >= observed_u:
+            count += 1
+
+    p_value = count / n_permutations
+    return observed_u, p_value
+
+
 def get_target_type(y, threshold=3):
     unique = np.unique(y)
     if len(unique) <= threshold:
@@ -275,7 +349,7 @@ def perform_statistical_test(X: np.ndarray, y: np.ndarray, test_type: str = 'aut
     Args:
         X: Feature matrix.
         y: Target variable.
-        test_type: Type of test ('t_test', 'anova', 'auto').
+        test_type: Type of test ('t_test', 'anova', 'mann_whitney', 'kruskal_wallis', 'permutation', 'auto').
 
     Returns:
         Dictionary with test results.
@@ -306,6 +380,32 @@ def perform_statistical_test(X: np.ndarray, y: np.ndarray, test_type: str = 'aut
             model = LogisticRegression(max_iter=1000)
             model.fit(X, y)
             results = {'test': 'logistic', 'accuracy': model.score(X, y)}
+    elif test_type == 'mann_whitney' and len(np.unique(y)) == 2:
+        # Split data by target
+        unique_vals = np.unique(y)
+        group1 = X[y == unique_vals[0]]
+        group2 = X[y == unique_vals[1]]
+        if X.shape[1] == 1:
+            u_stat, p_value = perform_mann_whitney(group1.flatten(), group2.flatten())
+            results = {'test': 'mann_whitney', 'u_stat': u_stat, 'p_value': p_value}
+        else:
+            # Multiple features, use logistic regression for binary classification
+            model = LogisticRegression(max_iter=1000)
+            model.fit(X, y)
+            results = {'test': 'logistic', 'accuracy': model.score(X, y)}
+    elif test_type == 'permutation' and len(np.unique(y)) == 2:
+        # Split data by target
+        unique_vals = np.unique(y)
+        group1 = X[y == unique_vals[0]]
+        group2 = X[y == unique_vals[1]]
+        if X.shape[1] == 1:
+            u_stat, p_value = perform_permutation_test(group1.flatten(), group2.flatten())
+            results = {'test': 'permutation', 'u_stat': u_stat, 'p_value': p_value}
+        else:
+            # Multiple features, use logistic regression for binary classification
+            model = LogisticRegression(max_iter=1000)
+            model.fit(X, y)
+            results = {'test': 'logistic', 'accuracy': model.score(X, y)}
     elif test_type == 'anova':
         # For ANOVA, need to group by target
         groups = [X[y == val] for val in np.unique(y)]
@@ -317,8 +417,19 @@ def perform_statistical_test(X: np.ndarray, y: np.ndarray, test_type: str = 'aut
             model = LogisticRegression(max_iter=1000, multi_class='ovr')
             model.fit(X, y)
             results = {'test': 'logistic', 'accuracy': model.score(X, y)}
+    elif test_type == 'kruskal_wallis':
+        # For Kruskal-Wallis, need to group by target
+        groups = [X[y == val] for val in np.unique(y)]
+        if all(g.shape[1] == 1 for g in groups):
+            h_stat, p_value = perform_kruskal_wallis(*[g.flatten() for g in groups])
+            results = {'test': 'kruskal_wallis', 'h_stat': h_stat, 'p_value': p_value}
+        else:
+            # Multiple features, use logistic
+            model = LogisticRegression(max_iter=1000, multi_class='ovr')
+            model.fit(X, y)
+            results = {'test': 'logistic', 'accuracy': model.score(X, y)}
     elif test_type == 'regression':
-        from .regression_analysis import perform_multiple_linear_regression
+        from ..regression_analysis import perform_multiple_linear_regression
         reg_results = perform_multiple_linear_regression(X, y)
         results = {'test': 'regression', 'r_squared': reg_results['adj_r_squared'], 'p_value': reg_results['f_p_value']}
 
