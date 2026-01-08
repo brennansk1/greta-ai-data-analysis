@@ -88,7 +88,6 @@ greta-cli report --input-file results.json --format markdown --output report.md
 
 - **greta-core**: Core analysis engine with genetic algorithms
 - **greta-cli**: Command-line interface for professional workflows
-- **greta-web**: Web application for interactive analysis (Streamlit)
 
 ## 📋 Requirements
 
@@ -127,7 +126,21 @@ hypotheses = gc.hypothesis_search.generate_hypotheses(df_engineered, 'target')
 narratives = gc.narratives.generate_summary_narrative(hypotheses, df_engineered.columns.tolist())
 ```
 
-## 📈 Roadmap
+## 📈 Current Status
+
+GRETA is currently in **Phase 3: Advanced Analytics & UX** with the enhanced feature selection pipeline fully implemented and validated. The project is transitioning to **Phase 4: Enterprise Readiness & Scalability**, focusing on big data support, job queue systems, and collaborative features.
+
+### Recent Achievements (2025-2026)
+- ✅ **Enhanced Feature Selection Pipeline**: Parallel GA optimization, dynamic feature engineering, SHAP importance, bootstrap validation, causal prioritization
+- ✅ **Advanced Statistical Methods**: Non-parametric tests (Mann-Whitney U, Kruskal-Wallis, permutation tests)
+- ✅ **Comprehensive PDF Reporting**: Business insights with charts and automated generation
+- ✅ **AutoML Framework**: Complete AutoML pipeline with model registry, hyperparameter tuning, and evaluation (implementation complete, integration pending)
+
+### Next Priorities
+- 🔄 **AutoML Integration**: CLI and web app integration for automated machine learning
+- 🔄 **Scalable Backend**: Dask/Spark support for large datasets
+- 🔄 **Job Queue System**: Asynchronous processing with Celery/Redis
+- 🔄 **Enterprise Features**: Team collaboration, security, and performance optimization
 
 See [ROADMAP.md](ROADMAP.md) for detailed development phases and upcoming features.
 

@@ -12,7 +12,9 @@ import logging
 
 from greta_core import ingestion, preprocessing, hypothesis_search, statistical_analysis, narratives
 from greta_core.statistical_analysis import causal_analysis
+from greta_core.automl import AutoMLPipeline
 from ..config import GretaConfig
+from ..job_management import JobManager
 
 logger = logging.getLogger(__name__)
 
@@ -57,21 +59,21 @@ def run_analysis_pipeline(config: GretaConfig, overrides: Dict[str, Any] = None)
     logger.info("Starting data ingestion phase")
     start_time = time.time()
     with tqdm(total=1, desc="Data Ingestion") as pbar:
-        logger.info(f"Loading data from {config.data.source} (type: {config.data.type})")
+        logger.info(f"Loading data from source (type: {config.data.type})")
         load_start = time.time()
         try:
-            if config.data.type == 'csv':
-                df = ingestion.load_csv(config.data.source)
-            elif config.data.type == 'excel':
-                df = ingestion.load_excel(config.data.source, sheet_name=config.data.sheet_name)
-            else:
-                logger.error(f"Unsupported data type: {config.data.type}")
-                raise ValueError(f"Unsupported data type: {config.data.type}")
+            # Use unified data loading function
+            source_config = config.data.dict()
+            df = ingestion.load_data_unified(source_config, backend=config.scalability.ingestion_backend)
             load_time = time.time() - load_start
             logger.info(f"Data loaded successfully in {load_time:.2f} seconds. Shape: {df.shape}, columns: {list(df.columns)}")
         except Exception as e:
             logger.error(f"Failed to load data: {e}", exc_info=True)
             raise
+
+        # Convert Spark DataFrame to Pandas if needed
+        if hasattr(df, 'rdd'):
+            df = df.toPandas()
 
         # Validate data
         logger.debug("Validating loaded data")
@@ -281,7 +283,8 @@ def run_analysis_pipeline(config: GretaConfig, overrides: Dict[str, Any] = None)
         'num_generations': config.hypothesis_search.num_generations,
         'cx_prob': config.hypothesis_search.cx_prob,
         'mut_prob': config.hypothesis_search.mut_prob,
-        'progress_callback': lambda: None  # We'll handle progress manually
+        'progress_callback': lambda: None,  # We'll handle progress manually
+        'distributed_backend': config.scalability.distributed_backend
     }
 
     # Apply overrides for additional parameters
@@ -407,6 +410,33 @@ def run_analysis_pipeline(config: GretaConfig, overrides: Dict[str, Any] = None)
     logger.info(f"Causal analysis phase completed in {causal_time:.2f} seconds")
     print(f"Causal analysis completed in {causal_time:.2f} seconds")
 
+    # Step 4.6: AutoML Analysis (Optional)
+    automl_results = None
+    if config.automl.enabled:
+        automl_start = time.time()
+        logger.info("Starting AutoML analysis phase")
+        print("Performing AutoML analysis...")
+
+        try:
+            # Prepare data for AutoML
+            automl_data = {'X': X_clean, 'y': y}
+
+            # Create and run AutoML pipeline
+            pipeline = AutoMLPipeline(config.automl.dict(), automl_data, hypotheses)
+            automl_results = pipeline.run_automl()
+
+            logger.info("AutoML analysis completed successfully")
+            print("AutoML analysis completed successfully")
+
+        except Exception as e:
+            logger.error(f"AutoML analysis failed: {e}", exc_info=True)
+            print(f"AutoML analysis failed: {e}")
+            automl_results = None
+
+        automl_time = time.time() - automl_start
+        logger.info(f"AutoML analysis phase completed in {automl_time:.2f} seconds")
+        print(f"AutoML analysis completed in {automl_time:.2f} seconds")
+
     # Step 5: Narrative Generation
     narrative_start = time.time()
     logger.info("Starting narrative generation phase")
@@ -446,8 +476,27 @@ def run_analysis_pipeline(config: GretaConfig, overrides: Dict[str, Any] = None)
         'hypotheses': hypotheses,
         'statistical_results': stat_results,
         'causal_results': causal_results,
+        'automl_results': automl_results,
         'summary_narrative': summary_narrative,
         'detailed_report': detailed_report
     }
 
     return results
+
+
+def run_analysis_async(config: GretaConfig, data_path: str) -> str:
+    """
+    Run analysis asynchronously via job manager.
+
+    Args:
+        config: GretaConfig instance.
+        data_path: Path to the data file.
+
+    Returns:
+        Job ID for the submitted analysis.
+    """
+    # Update config with data_path
+    config.data.source = data_path
+
+    job_manager = JobManager(**config.scalability.celery_config)
+    return job_manager.submit_analysis_job(config, data_path)

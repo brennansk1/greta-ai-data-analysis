@@ -33,6 +33,7 @@ from greta_core.preprocessing import detect_feature_types, prepare_features_for_
 
 from .chromosome_utils import get_chromosome_info, create_toolbox
 from .evaluation_utils import evaluate_hypothesis
+from ..scalability_errors import SparkUnavailableError, DistributedComputationError
 
 
 class Optimizer(ABC):
@@ -134,6 +135,8 @@ class GeneticAlgorithmOptimizer(Optimizer):
         self.mut_prob = kwargs.get('mut_prob', 0.2)
         self.n_processes = kwargs.get('n_processes', 1)
         self.use_dask = kwargs.get('use_dask', False)
+        self.use_spark = kwargs.get('use_spark', False)
+        self.distributed_backend = kwargs.get('distributed_backend', 'auto')  # "multiprocessing" | "dask" | "spark" | "auto"
         self.adaptive_params = kwargs.get('adaptive_params', False)
         self.diversity_threshold = kwargs.get('diversity_threshold', 0.1)
         self.convergence_threshold = kwargs.get('convergence_threshold', 0.01)
@@ -147,6 +150,7 @@ class GeneticAlgorithmOptimizer(Optimizer):
         self.pop = None
         self.pool = None
         self.client = None
+        self.spark_session = None
 
     def initialize(self) -> None:
         """Initialize the GA toolbox and population."""
@@ -183,9 +187,58 @@ class GeneticAlgorithmOptimizer(Optimizer):
         for ind, fit in zip(self.pop, fitnesses):
             ind.fitness.values = fit
 
+        # Determine evaluation backend
+        self.evaluation_backend = "multiprocessing"
+        if self.distributed_backend == "auto":
+            if self.use_spark:
+                self.evaluation_backend = "spark"
+            elif self.use_dask:
+                self.evaluation_backend = "dask"
+        else:
+            self.evaluation_backend = self.distributed_backend
+
+        # Setup Spark if needed
+        if self.evaluation_backend == "spark":
+            try:
+                from pyspark.sql import SparkSession
+                self.spark_session = SparkSession.builder.getOrCreate()
+            except ImportError:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning("PySpark not available, falling back to dask or multiprocessing")
+                self.evaluation_backend = "dask" if self.use_dask else "multiprocessing"
+
     def evaluate(self, candidate: List[int]) -> Tuple[float, float, float, float]:
         """Evaluate a candidate hypothesis."""
         return evaluate_hypothesis(candidate, self.data, self.target, self.chromosome_info)
+
+    def evaluate_with_spark(self, population: List[List[int]]) -> List[Tuple[float, ...]]:
+        """Evaluate population using Spark distributed computing."""
+        if not self.spark_session:
+            try:
+                from pyspark.sql import SparkSession
+                self.spark_session = SparkSession.builder.getOrCreate()
+            except ImportError:
+                raise SparkUnavailableError("PySpark not available for Spark evaluation.")
+
+        # Convert population to RDD and evaluate
+        rdd = self.spark_session.sparkContext.parallelize(population)
+        def eval_individual(ind):
+            return self.evaluate(ind)
+        results = rdd.map(eval_individual).collect()
+        return results
+
+    def evaluate_with_dask_distributed(self, population: List[List[int]]) -> List[Tuple[float, ...]]:
+        """Enhanced Dask distributed evaluation with cluster support."""
+        if not self.client:
+            try:
+                from dask.distributed import Client
+                self.client = Client()  # Assume cluster is running
+            except ImportError:
+                raise DistributedComputationError("Dask distributed not available.")
+
+        futures = self.client.map(self.evaluate, population)
+        return [f.result() for f in futures]
 
     def hill_climbing(self, individual: List[int]) -> Tuple[List[int], float]:
         """Apply hill climbing local search to an individual."""
@@ -304,9 +357,16 @@ class GeneticAlgorithmOptimizer(Optimizer):
 
             if invalid_ind:
                 start_eval = time.time()
-                fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
+                if self.evaluation_backend == "spark":
+                    population_list = [list(ind) for ind in invalid_ind]
+                    fitnesses = self.evaluate_with_spark(population_list)
+                elif self.evaluation_backend == "dask":
+                    population_list = [list(ind) for ind in invalid_ind]
+                    fitnesses = self.evaluate_with_dask_distributed(population_list)
+                else:
+                    fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
                 eval_time = time.time() - start_eval
-                logger.info(f"Evaluation completed in {eval_time:.2f} seconds")
+                logger.info(f"Evaluation completed in {eval_time:.2f} seconds using {self.evaluation_backend}")
 
                 for ind, fit in zip(invalid_ind, fitnesses):
                     ind.fitness.values = fit
@@ -379,6 +439,8 @@ class GeneticAlgorithmOptimizer(Optimizer):
             self.pool.join()
         if self.client:
             self.client.close()
+        if self.spark_session:
+            self.spark_session.stop()
 
         return pareto_front
 

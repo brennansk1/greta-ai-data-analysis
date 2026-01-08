@@ -1,7 +1,7 @@
 data:
-  source: data/churn.csv
+  source: insurance2.csv
   type: csv
-  target_column: null
+  target_column: insuranceclaim
   sheet_name: null
 preprocessing:
   missing_strategy: mean

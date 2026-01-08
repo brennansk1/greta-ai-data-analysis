@@ -38,11 +38,11 @@ This document outlines the complete phased development roadmap for Project Greta
 - Results page with ranked findings and expandable details.
 
 **Key Subtasks:**
-- [x] Create Streamlit web app structure with multiple pages (Welcome, Upload, Dashboard, Results). - Completed: greta_web/app.py with multi-page navigation.
-- [x] Implement data upload interface for CSV, Excel, Parquet, and database connections. - Completed: greta_web/pages/data_upload.py supports file uploads.
-- [x] Develop Data Health Dashboard with column health status and cleaning actions. - Completed: greta_web/pages/data_health.py displays data quality metrics and cleaning options.
-- [x] Build Analysis Dashboard with target variable selection and "Find Insights" functionality. - Completed: greta_web/pages/analysis.py allows variable selection and insight generation.
-- [x] Integrate core engine into web app for asynchronous processing. - Completed: greta_cli/core_integration/integration.py bridges web and core.
+- [x] Create Streamlit web app structure with multiple pages (Welcome, Upload, Dashboard, Results). - Completed.
+- [x] Implement data upload interface for CSV, Excel, Parquet, and database connections. - Completed.
+- [x] Develop Data Health Dashboard with column health status and cleaning actions. - Completed.
+- [x] Build Analysis Dashboard with target variable selection and "Find Insights" functionality. - Completed.
+- [x] Integrate core engine into web app for asynchronous processing. - Completed.
 - [x] Add interactive visualizations and progress animations. - Completed: Integrated Plotly charts and progress bars.
 - [x] Implement session state management for data persistence. - Completed: Streamlit session state used for data retention across pages.
 
@@ -62,8 +62,8 @@ This document outlines the complete phased development roadmap for Project Greta
 **Key Subtasks:**
 - [x] Extend statistical analysis module with multiple linear regression and time-series methods. - Completed: Added regression and time-series analysis to greta_core/statistical_analysis.py.
 - [x] Improve fitness function for advanced hypothesis evaluation. - Completed: Enhanced fitness scoring in greta_core/hypothesis_search.py.
-- [x] Add "Details" button and expandable result explanations. - Completed: greta_web/pages/results.py includes expandable details.
-- [x] Implement database connection wizards in web app. - Completed: Database connection options in greta_web/pages/data_upload.py.
+- [x] Add "Details" button and expandable result explanations. - Completed.
+- [x] Implement database connection wizards in web app. - Completed.
 - [x] Enhance visualizations for complex analyses. - Completed: Advanced Plotly visualizations integrated.
 - [x] Increase transparency with detailed statistical metrics display. - Completed: Detailed metrics shown in analysis and results pages.
 
@@ -115,6 +115,28 @@ This document outlines the complete phased development roadmap for Project Greta
 - [ ] Expand causal analysis capabilities with advanced estimators and sensitivity analysis.
 - [ ] Add new features including anomaly detection algorithms and clustering methods for unsupervised insights.
 
+**AutoML Integration (Phase 4-5):**
+- [ ] Integrate AutoML pipeline with CLI (`greta-cli automl` command)
+- [ ] Add AutoML configuration options to main config system
+- [ ] Implement AutoML-specific reporting and output formats
+- [ ] Create web app interface for AutoML model selection and results
+- [ ] Add AutoML results to enhanced narrative generation
+- [ ] Implement model persistence and loading for trained AutoML models
+- [ ] Add AutoML performance comparison with traditional statistical methods
+- [ ] Create AutoML workflow integration with existing hypothesis search
+- [ ] Implement automated model deployment recommendations
+- [ ] Add uncertainty quantification and confidence intervals for AutoML predictions
+- [ ] Develop AutoML ensemble methods combining multiple model types
+- [ ] Integrate AutoML with time series forecasting capabilities
+- [ ] Add unsupervised learning AutoML for clustering and dimensionality reduction
+- [ ] Implement Bayesian model selection and comparison
+- [ ] Create AutoML pipeline for feature engineering automation
+- [ ] Add model interpretability reports for AutoML results
+- [ ] Implement AutoML model monitoring and drift detection
+- [ ] Develop AutoML API endpoints for programmatic access
+- [ ] Add AutoML support for custom model types and plugins
+- [ ] Create comprehensive AutoML testing and validation suite
+
 ## Phase 5: Maturity & Community
 **Goal:** Transform the project into a true platform with extensibility, tutorials, and advanced R&D.
 
@@ -138,4 +160,4 @@ This document outlines the complete phased development roadmap for Project Greta
 
 ---
 
-*Last updated: 2025-09-29*
+*Last updated: 2026-01-08*
